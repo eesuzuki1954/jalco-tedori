@@ -30,7 +30,10 @@ const SHARES = 218692;
 // 株価取得（Yahoo Finance）
 async function fetchPrice() {
     try {
-        const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+        // const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+        const res = await fetch("https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+
+        
         const data = await res.json();
         const price = data.chart.result[0].meta.regularMarketPrice;
 
