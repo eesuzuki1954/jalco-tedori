@@ -3,69 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <title>JALCO 手取り計算</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
-label { font-size: 20px; }
-input { font-size: 22px; padding: 10px; width: 100%; margin-top: 10px; }
-.result { margin-top: 25px; font-size: 28px; font-weight: bold; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 20px;
+    background: #fafafa;
+}
+.box {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+label {
+    font-weight: bold;
+}
+input {
+    width: 100%;
+    padding: 10px;
+    font-size: 20px;
+    margin-top: 5px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+.result {
+    font-size: 26px;
+    font-weight: bold;
+    margin-top: 20px;
+}
 </style>
 </head>
+
 <body>
+<div class="box">
+    <h2>JALCO 手取り計算</h2>
 
-<h2>JALCO 手取り計算</h2>
+    <p id="price">株価：取得中…</p>
+    <p>株数：218,692 株（固定）</p>
 
-<div id="price">株価：取得中...</div>
-<div>株数：218,692 株（固定）</div>
+    <label>借入額（円）</label>
+    <input id="loan" type="text" value="50,000,000">
 
-<label>借入額（円）</label>
-<input id="borrow" type="number" value="50000000" oninput="calc()">
-
-<div class="result" id="output">手取り：計算中...</div>
+    <p class="result" id="tedori">手取り：計算中…</p>
+</div>
 
 <script>
 // 固定値
 const SHARES = 218692;
+const COST = 51200088;   // 取得原価
+const FEE = 250000;      // 手数料
+const TAX_RATE = 0.20315;
 
-// 株価取得（Yahoo Finance）
-async function fetchPrice() {
-    try {
-        // const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
-        const res = await fetch("https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+// 3桁区切り入力
+const loanInput = document.getElementById("loan");
+loanInput.addEventListener("input", () => {
+    let raw = loanInput.value.replace(/,/g, "");
+    raw = raw.replace(/\D/g, "");
+    loanInput.value = Number(raw).toLocaleString();
+    if (window.latestPrice) calculate(window.latestPrice);
+});
 
-        
-        const data = await res.json();
-        const price = data.chart.result[0].meta.regularMarketPrice;
+// 計算式
+function calculate(price) {
+    const loan = Number(loanInput.value.replace(/,/g, ""));
 
-        document.getElementById("price").textContent = "株価：" + price.toLocaleString() + " 円";
+    const sellAmount = price * SHARES;
+    const profit = sellAmount - COST - FEE;
+    const tax = Math.max(profit, 0) * TAX_RATE;
 
-        calc(price);
-    } catch (e) {
-        document.getElementById("price").textContent = "株価：取得失敗";
-    }
-}
+    const tedori = sellAmount - FEE - tax - loan;
 
-function calc(latestPrice = null) {
-    const borrow = Number(document.getElementById("borrow").value);
-    const priceText = document.getElementById("price").textContent;
-
-    let price = latestPrice;
-
-    // ページ読み込み後の再計算用
-    if (!price && priceText.includes("円")) {
-        price = Number(priceText.replace(/[^0-9.]/g, ""));
-    }
-
-    if (!price) return;
-
-    const total = price * SHARES;
-    const tedori = total - borrow;
-
-    document.getElementById("output").textContent =
+    document.getElementById("tedori").textContent =
         "手取り：" + tedori.toLocaleString() + " 円";
 }
 
-// 初期処理
+// Yahoo API（CORS回避＋リトライ＋タイムアウト）
+async function fetchPrice() {
+    const url = "https://api.allorigins.win/raw?url=" +
+        encodeURIComponent("https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+
+    for (let i = 0; i < 3; i++) {
+        try {
+            const controller = new AbortController();
+            setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
+
+            const res = await fetch(url, { signal: controller.signal });
+            const data = await res.json();
+
+            const price = data.chart.result[0].meta.regularMarketPrice;
+
+            window.latestPrice = price;
+
+            document.getElementById("price").textContent =
+                "株価：" + price.toLocaleString() + " 円";
+
+            calculate(price);
+            return;
+        } catch (e) {
+            console.log("取得失敗、リトライ:", i + 1);
+        }
+    }
+
+    document.getElementById("price").textContent = "株価：取得失敗";
+}
+
 fetchPrice();
 </script>
 
