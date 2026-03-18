@@ -82,15 +82,14 @@ function calculate(price) {
 
 // Finnhub API（超安定）
 async function fetchPrice() {
-    //const API_KEY = "d6t66v9r01qoqoisdakg";    // ←ここにあなたのキーを入れる
-    //const url = `https://finnhub.io/api/v1/quote?symbol=TSE:6625&token=${API_KEY}`;
     const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
-    
-    try {試してみて {
+
+    try {
         const res = await fetch(url);
         const data = await res.json();
 
-        const price = data.c; // 現在値
+        // Yahoo Finance の現在値
+        const price = data.chart.result[0].meta.regularMarketPrice;
 
         window.latestPrice = price;
 
