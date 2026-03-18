@@ -73,7 +73,8 @@ function calculate(price) {
     const profit = sellAmount - COST - FEE;
     const tax = Math.max(profit, 0) * TAX_RATE;
 
-    const tedori = sellAmount - FEE - tax - loan;
+    // 手取り額（小数点以下を四捨五入）
+    const tedori = Math.round(sellAmount - FEE - tax - loan);
 
     document.getElementById("tedori").textContent =
         "手取り：" + tedori.toLocaleString() + " 円";
