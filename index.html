@@ -2,29 +2,68 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JALCO 手取り</title>
+<title>JALCO 手取り計算</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
-input { font-size: 20px; padding: 10px; width: 100%; margin-top: 10px; }
-.result { margin-top: 20px; font-size: 28px; font-weight: bold; }
+label { font-size: 20px; }
+input { font-size: 22px; padding: 10px; width: 100%; margin-top: 10px; }
+.result { margin-top: 25px; font-size: 28px; font-weight: bold; }
 </style>
 </head>
 <body>
 
 <h2>JALCO 手取り計算</h2>
 
-<label>借入額（円）</label>
-<input id="borrow" type="number" value="0" oninput="calc()">
+<div id="price">株価：取得中...</div>
+<div>株数：218,692 株（固定）</div>
 
-<div class="result" id="output">手取り：0 円</div>
+<label>借入額（円）</label>
+<input id="borrow" type="number" value="50000000" oninput="calc()">
+
+<div class="result" id="output">手取り：計算中...</div>
 
 <script>
-function calc() {
-    const borrow = Number(document.getElementById("borrow").value);
-    const tedori = 350000 - borrow;
-    document.getElementById("output").textContent = "手取り：" + tedori.toLocaleString() + " 円";
+// 固定値
+const SHARES = 218692;
+
+// 株価取得（Yahoo Finance）
+async function fetchPrice() {
+    try {
+        const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+        const data = await res.json();
+        const price = data.chart.result[0].meta.regularMarketPrice;
+
+        document.getElementById("price").textContent = "株価：" + price.toLocaleString() + " 円";
+
+        calc(price);
+    } catch (e) {
+        document.getElementById("price").textContent = "株価：取得失敗";
+    }
 }
+
+function calc(latestPrice = null) {
+    const borrow = Number(document.getElementById("borrow").value);
+    const priceText = document.getElementById("price").textContent;
+
+    let price = latestPrice;
+
+    // ページ読み込み後の再計算用
+    if (!price && priceText.includes("円")) {
+        price = Number(priceText.replace(/[^0-9.]/g, ""));
+    }
+
+    if (!price) return;
+
+    const total = price * SHARES;
+    const tedori = total - borrow;
+
+    document.getElementById("output").textContent =
+        "手取り：" + tedori.toLocaleString() + " 円";
+}
+
+// 初期処理
+fetchPrice();
 </script>
 
 </body>
