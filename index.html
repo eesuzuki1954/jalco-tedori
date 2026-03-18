@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>JALCO 手取り</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
+input { font-size: 20px; padding: 10px; width: 100%; margin-top: 10px; }
+.result { margin-top: 20px; font-size: 28px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h2>JALCO 手取り計算</h2>
+
+<label>借入額（円）</label>
+<input id="borrow" type="number" value="0" oninput="calc()">
+
+<div class="result" id="output">手取り：0 円</div>
+
+<script>
+function calc() {
+    const borrow = Number(document.getElementById("borrow").value);
+    const tedori = 350000 - borrow;
+    document.getElementById("output").textContent = "手取り：" + tedori.toLocaleString() + " 円";
+}
+</script>
+
+</body>
+</html>
