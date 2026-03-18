@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JALCO 手取り計算</title>
+<title>JALCO 手取り計算（Finnhub版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -38,13 +38,14 @@ input {
 
 <body>
 <div class="box">
-    <h2>JALCO 手取り計算</h2>
+    <h2>JALCO 手取り計算（Finnhub版）</h2>
 
     <p id="price">株価：取得中…</p>
     <p>株数：218,692 株（固定）</p>
 
     <label>借入残高（円）</label>
-    <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*" value="50,000,000">
+    <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*" value="48,400,000">
+
     <p class="result" id="tedori">手取り：計算中…</p>
 </div>
 
@@ -72,41 +73,33 @@ function calculate(price) {
     const profit = sellAmount - COST - FEE;
     const tax = Math.max(profit, 0) * TAX_RATE;
 
-    // 手取り額（小数点以下を四捨五入）
+    // 手取り額（四捨五入で整数化）
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
     document.getElementById("tedori").textContent =
         "手取り：" + tedori.toLocaleString() + " 円";
 }
 
-// Yahoo API（CORS回避＋リトライ＋タイムアウト）
+// Finnhub API（超安定）
 async function fetchPrice() {
-    const url = "https://api.allorigins.win/raw?url=" +
-        encodeURIComponent("https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+    const API_KEY = "d6t66v9r01qoqoisdaj0d6t66v9r01qoqoisdajg";    // ←ここにあなたのキーを入れる
+    const url = `https://finnhub.io/api/v1/quote?symbol=TSE:6625&token=${API_KEY}`;
 
-    for (let i = 0; i < 3; i++) {
-        try {
-            const controller = new AbortController();
-            setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
+    try {試してみて {
+        const res = await fetch(url);
+        const data = await res.json();
 
-            const res = await fetch(url, { signal: controller.signal });
-            const data = await res.json();
+        const price = data.c; // 現在値
 
-            const price = data.chart.result[0].meta.regularMarketPrice;
+        window.latestPrice = price;
 
-            window.latestPrice = price;
+        document.getElementById("price").textContent =
+            "株価：" + price.toLocaleString() + " 円";
 
-            document.getElementById("price").textContent =
-                "株価：" + price.toLocaleString() + " 円";
-
-            calculate(price);
-            return;
-        } catch (e) {
-            console.log("取得失敗、リトライ:", i + 1);
-        }
+        calculate(price);
+    } catch (e) {
+        document.getElementById("price").textContent = "株価：取得失敗";
     }
-
-    document.getElementById("price").textContent = "株価：取得失敗";
 }
 
 fetchPrice();
