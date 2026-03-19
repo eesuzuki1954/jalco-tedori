@@ -48,13 +48,14 @@ input {
     <p class="item">株数：218,692 株</p>
     <p class="item" id="sellAmount">売却代金：-</p>
     <p class="item">取得原価：51,200,088 円</p>
-    <p class="item">約定手数料：250,000 円</p>
+    <p class="item">B 約定手数料：250,000 円</p>
     <p class="item" id="profit">売却益（課税対象）：-</p>
     <p class="item" id="tax">税金（20.315%）：- 円</p>
-    <label>借入残高（円）</label>
+    <label>D 借入残高（円）</label>
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
 
     <p class="result" id="tedori">手取り：計算中…</p>
+    <p class="item" id="formula">E = A − B − C − D</p>
 </div>
 
 <script>
@@ -101,13 +102,13 @@ function calculate(price) {
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
     document.getElementById("sellAmount").textContent =
-        "売却代金：" + sellAmount.toLocaleString() + " 円";
+        "A 売却代金：" + sellAmount.toLocaleString() + " 円";
 
     document.getElementById("profit").textContent =
         "売却益（課税対象）：" + profit.toLocaleString() + " 円";
 
     document.getElementById("tax").textContent =
-        "税金（20.315%）：" + Math.round(tax).toLocaleString() + " 円";
+        "C 税金（20.315%）：" + Math.round(tax).toLocaleString() + " 円";
 
     document.getElementById("tedori").textContent =
         "手取り：" + tedori.toLocaleString() + " 円";
