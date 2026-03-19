@@ -33,6 +33,10 @@ input {
     font-weight: bold;
     margin-top: 20px;
 }
+.item {
+    font-size: 22px;
+    margin-top: 10px;
+}
 </style>
 </head>
 
@@ -40,11 +44,15 @@ input {
 <div class="box">
     <h2>JALCO 手取り計算</h2>
 
-    <p id="price">株価：取得中…</p>
-    <p>株数：218,692 株（固定）</p>
+    <p class="item" id="price">株価：取得中…</p>
+    <p class="item">株数：218,692 株（固定）</p>
+    <p class="item" id="sellAmount">売却代金：-</p>
+    <p class="item">取得原価：51,200,088 円</p>
+    <p class="item">約定手数料：250,000 円</p>
+    <p class="item" id="profit">売却益（課税対象）：-</p>
 
     <label>借入残高（円）</label>
-    <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*" value="48,400,000">
+    <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
 
     <p class="result" id="tedori">手取り：計算中…</p>
 </div>
@@ -56,8 +64,26 @@ const COST = 51200088;   // 取得原価
 const FEE = 250000;      // 手数料
 const TAX_RATE = 0.20315;
 
-// 3桁区切り入力
+// ▼ 日付に応じた借入残高の初期値
+function getInitialLoan() {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = today.getMonth() + 1;
+    const d = today.getDate();
+
+    const dateNum = y * 10000 + m * 100 + d;
+
+    if (dateNum <= 20260601) return 48400000;
+    if (dateNum <= 20270601) return 45800000;
+    if (dateNum <= 20280601) return 43200000;
+    return 40000000;
+}
+
+// 初期値セット
 const loanInput = document.getElementById("loan");
+loanInput.value = getInitialLoan().toLocaleString();
+
+// 3桁区切り入力
 loanInput.addEventListener("input", () => {
     let raw = loanInput.value.replace(/,/g, "");
     raw = raw.replace(/\D/g, "");
@@ -72,15 +98,19 @@ function calculate(price) {
     const sellAmount = price * SHARES;
     const profit = sellAmount - COST - FEE;
     const tax = Math.max(profit, 0) * TAX_RATE;
-
-    // 手取り額（四捨五入で整数化）
     const tedori = Math.round(sellAmount - FEE - tax - loan);
+
+    document.getElementById("sellAmount").textContent =
+        "売却代金：" + sellAmount.toLocaleString() + " 円";
+
+    document.getElementById("profit").textContent =
+        "売却益（課税対象）：" + profit.toLocaleString() + " 円";
 
     document.getElementById("tedori").textContent =
         "手取り：" + tedori.toLocaleString() + " 円";
 }
 
-// Finnhub API（超安定）
+// 株価取得（AllOrigins）
 async function fetchPrice() {
     const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
 
@@ -88,7 +118,6 @@ async function fetchPrice() {
         const res = await fetch(url);
         const data = await res.json();
 
-        // Yahoo Finance の現在値
         const price = data.chart.result[0].meta.regularMarketPrice;
 
         window.latestPrice = price;
