@@ -38,12 +38,12 @@ input {
     margin-top: 10px;
 }
 .loan-label {
-    font-size: 26px;
+    font-size: 25px;
     font-weight: bold;
 }
 .formula {
     font-size: 20px;
-    margin-top: 2px;   /* ← 距離が縮まる */
+    margin-top: 1px;   /* ← 距離が縮まる */
     color: #555;
 }
 </style>
@@ -63,7 +63,7 @@ input {
     <label class="loan-label">D 借入残高（円）</label>
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
     <p class="result" id="tedori">手取り：計算中…</p>
-    <p class="formula" id="formula">手取り= A − B − C − D</p>
+    <p class="formula" id="formula">計算式= A − B − C − D</p>
 </div>
 
 <script>
