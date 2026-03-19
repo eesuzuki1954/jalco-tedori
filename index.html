@@ -43,7 +43,7 @@ input {
 }
 .formula {
     font-size: 20px;
-    margin-top: 5px;   /* ← 距離が縮まる */
+    margin-top: 2px;   /* ← 距離が縮まる */
     color: #555;
 }
 </style>
@@ -63,7 +63,7 @@ input {
     <label class="loan-label">D 借入残高（円）</label>
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
     <p class="result" id="tedori">手取り：計算中…</p>
-    <p class="formula" id="formula">E = A − B − C − D</p>
+    <p class="formula" id="formula">手取り= A − B − C − D</p>
 </div>
 
 <script>
@@ -119,7 +119,7 @@ function calculate(price) {
         "C 税金（20.315%）：" + Math.round(tax).toLocaleString() + " 円";
 
     document.getElementById("tedori").textContent =
-        "E 手取り：" + tedori.toLocaleString() + " 円";
+        "手取り：" + tedori.toLocaleString() + " 円";
 }
 
 // 株価取得（AllOrigins）
