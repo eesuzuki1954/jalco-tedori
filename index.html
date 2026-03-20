@@ -134,7 +134,7 @@ async function fetchPrice() {
         window.latestPrice = price;
 
         document.getElementById("price").textContent =
-            "株価：" + price.toLocaleString() + " 円";
+            "株価：" + price.toLocaleString() + " 円（時価）";
 
         calculate(price);
     } catch (e) {
