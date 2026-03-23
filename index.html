@@ -80,6 +80,11 @@ input {
     margin-right: 6px;
     font-size: 18px;
 }
+/* 円の改行を防ぐ    
+.nowrap {
+    white-space: nowrap;
+}
+    
 </style>
 </head>
 
@@ -160,7 +165,8 @@ function calculate(price) {
 
     // A
     document.getElementById("sellAmount").innerHTML =
-        '<span class="badge">A</span> 売却代金：' + sellAmount.toLocaleString() + ' 円';
+    '<span class="badge">A</span> 売却代金：<span class="nowrap">' +
+    sellAmount.toLocaleString() + ' 円</span>';
 
     // 利益（badgeは任意）
     document.getElementById("profit").innerHTML =
@@ -172,7 +178,7 @@ function calculate(price) {
 
     // 手取り
     document.getElementById("tedori").innerHTML =
-        '手取り：' + tedori.toLocaleString() + ' 円';
+    '手取り：<span class="nowrap">' + tedori.toLocaleString() + ' 円</span>';
 }
 
 // 株価取得（AllOrigins）
