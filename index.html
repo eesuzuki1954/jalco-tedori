@@ -69,10 +69,15 @@ input {
     color: #666;
 }
 
-.outline {
+.badge {
+    display: inline-block;
+    background: #007aff;     /* iOS標準ブルー */
+    color: white;
     font-weight: 700;
-    color: transparent;
-    -webkit-text-stroke: 1px #005BBB; /* 青い縁取り */
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-right: 6px;右端:6px;
+    font-size: 18px;
 }
     
 </style>
@@ -86,15 +91,15 @@ input {
     <p class="item">株数：218,692 株</p>
     <p class="item" id="sellAmount">売却代金：-</p>
     <p class="item">取得原価：51,200,088 円</p>
-    <p class="item"><span class="outline">B</span> 約定手数料：250,000 円</p>
+    <p class="item"><span class="badge">B</span> 約定手数料：250,000 円</p>
     <p class="item" id="profit">売却益（課税対象）：-</p>
     <p class="item" id="tax">税金（20.315%）：- 円</p>
-    <label class="loan-label"><span class="outline">D</span> 借入残高（円）</label>
+    <label class="loan-label"><span class="badge">D</span> 借入残高（円）</label>
 
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
     <p class="result" id="tedori">手取り：計算中…</p>
     <p class="formula" id="formula">
-    計算式 = <span class="outline">A</span> − <span class="outline">B</span> − <span class="outline">C</span> − <span class="outline">D</span>
+    計算式 = <span class="badge">A</span> − <span class="badge">B</span> − <span class="badge">C</span> − <span class="badge">D</span>    計算式 = A − B − C − D
 </p>
 
 </div>
@@ -143,15 +148,15 @@ function calculate(price) {
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
     document.getElementById("sellAmount").innerHTML =
-    '<span class="outline">A</span> 売却代金：' + sellAmount.toLocaleString() + ' 円';
+    '<span class="badge">A</span> 売却代金：' + sellAmount.toLocaleString() + ' 円';
 
     document.getElementById("profit").textContent =
         "売却益（課税対象）：" + profit.toLocaleString() + " 円";
 
     document.getElementById("tax").innerHTML =
-    '<span class="outline">C</span> 税金（20.315%）：' + Math.round(tax).toLocaleString() + ' 円';
+    '<span class="badge">C</span> 税金（20.315%）：' + Math.round(tax).toLocaleString() + ' 円';
 
-    document.getElementById("tedori").textContent =
+    document.getElementById("tedori").textContent =document.getElementById("tedori").textContent=
         "手取り：" + tedori.toLocaleString() + " 円";
 }
 
