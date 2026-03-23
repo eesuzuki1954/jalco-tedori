@@ -9,41 +9,60 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     padding: 20px;
-    background: #fafafa;
+    background: #f2f2f7; /* iPhoneの設定アプリ背景色 */
 }
+
+/* カード全体をiOS風に */
 .box {
     background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5ea;
 }
-label {
-    font-weight: bold;
-}
-input {
-    width: 100%;
-    padding: 10px;
-    font-size: 25px;
-    margin-top: 5px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-.result {
-    font-size: 26px;
-    font-weight: bold;フォントの太さ:太字;
-    margin-top: 20px;
-}
+
+/* 各項目を薄い区切り線で揃える */
 .item {
     font-size: 22px;
-    margin-top: 10px;
+    margin-top: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e5ea;
 }
+
+/* D 借入残高（円）を見出し風に強調 */
 .loan-label {
-    font-size: 22px;
+    font-size: 26px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 22px;
+    display: block;
 }
+
+/* 入力欄をiOS標準フォーム風に */
+input {
+    width: 100%;
+    padding: 12px;
+    font-size: 26px;
+    margin-top: 6px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+}
+
+/* 手取りを強調（控えめな青） */
+.result {
+    font-size: 30px;
+    font-weight: 700;
+    margin-top: 22px;
+    margin-bottom: 4px;
+    color: #005BBB;
+}
+
+/* 計算式を手取りのすぐ下に寄せる */
 .formula {
-    font-size: 20px;
-    margin-top: 1px;   /* ← 距離が縮まる */
-    color: #555;
+    font-size: 18px;
+    margin-top: 0px;
+    color: #666;
 }
 </style>
 </head>
