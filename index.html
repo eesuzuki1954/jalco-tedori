@@ -51,11 +51,15 @@ input {
 
 /* 手取りを強調（控えめな青） */
 .result {
-    font-size: 26px;
+    font-size: 27px;
     font-weight: 700;
     margin-top: 22px;
     margin-bottom: 4px;
-    color: #005BBB;
+    color: #333;
+    background: #fff9d6;   /* 淡い黄色 */
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #f0e6a8;
 }
 
 /* 計算式を手取りのすぐ下に寄せる */
@@ -64,6 +68,13 @@ input {
     margin-top: 0px;
     color: #666;
 }
+
+.outline {
+    font-weight: 700;
+    color: transparent;
+    -webkit-text-stroke: 1px #005BBB; /* 青い縁取り */
+}
+    
 </style>
 </head>
 
@@ -75,13 +86,17 @@ input {
     <p class="item">株数：218,692 株</p>
     <p class="item" id="sellAmount">売却代金：-</p>
     <p class="item">取得原価：51,200,088 円</p>
-    <p class="item">B 約定手数料：250,000 円</p>
+    <p class="item"><span class="outline">B</span> 約定手数料：250,000 円</p>
     <p class="item" id="profit">売却益（課税対象）：-</p>
     <p class="item" id="tax">税金（20.315%）：- 円</p>
-    <label class="loan-label">D 借入残高（円）</label>
+    <label class="loan-label"><span class="outline">D</span> 借入残高（円）</label>
+
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
     <p class="result" id="tedori">手取り：計算中…</p>
-    <p class="formula" id="formula">計算式= A − B − C − D</p>
+    <p class="formula" id="formula">
+    計算式 = <span class="outline">A</span> − <span class="outline">B</span> − <span class="outline">C</span> − <span class="outline">D</span>
+</p>
+
 </div>
 
 <script>
@@ -127,14 +142,14 @@ function calculate(price) {
     const tax = Math.max(profit, 0) * TAX_RATE;
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
-    document.getElementById("sellAmount").textContent =
-        "A 売却代金：" + sellAmount.toLocaleString() + " 円";
+    document.getElementById("sellAmount").innerHTML =
+    '<span class="outline">A</span> 売却代金：' + sellAmount.toLocaleString() + ' 円';
 
     document.getElementById("profit").textContent =
         "売却益（課税対象）：" + profit.toLocaleString() + " 円";
 
-    document.getElementById("tax").textContent =
-        "C 税金（20.315%）：" + Math.round(tax).toLocaleString() + " 円";
+    document.getElementById("tax").innerHTML =
+    '<span class="outline">C</span> 税金（20.315%）：' + Math.round(tax).toLocaleString() + ' 円';
 
     document.getElementById("tedori").textContent =
         "手取り：" + tedori.toLocaleString() + " 円";
