@@ -49,14 +49,14 @@ input {
     background: #fafafa;
 }
 
-/* 手取りを強調（控えめな青） */
+/* 手取りを強調（淡い黄色カード） */
 .result {
     font-size: 27px;
     font-weight: 700;
     margin-top: 22px;
     margin-bottom: 4px;
     color: #333;
-    background: #fff9d6;   /* 淡い黄色 */
+    background: #fff9d6;
     padding: 10px 14px;
     border-radius: 10px;
     border: 1px solid #f0e6a8;
@@ -69,17 +69,17 @@ input {
     color: #666;
 }
 
+/* A/B/C/D バッジ（青背景＋白文字） */
 .badge {
     display: inline-block;
-    background: #007aff;     /* iOS標準ブルー */
+    background: #007aff; /* iOS標準ブルー */
     color: white;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 6px;
-    margin-right: 6px;右端:6px;
+    margin-right: 6px;
     font-size: 18px;
 }
-    
 </style>
 </head>
 
@@ -89,19 +89,30 @@ input {
 
     <p class="item" id="price">株価：取得中…</p>
     <p class="item">株数：218,692 株</p>
-    <p class="item" id="sellAmount">売却代金：-</p>
+
+    <!-- A：HTML側に最初からバッジを置く（即表示のため） -->
+    <p class="item" id="sellAmount"><span class="badge">A</span> 売却代金：-</p>
+
     <p class="item">取得原価：51,200,088 円</p>
+
+    <!-- B：固定なのでHTMLに置いてOK -->
     <p class="item"><span class="badge">B</span> 約定手数料：250,000 円</p>
+
+    <!-- 利益（badgeは任意） -->
     <p class="item" id="profit">売却益（課税対象）：-</p>
-    <p class="item" id="tax">税金（20.315%）：- 円</p>
+
+    <!-- C：HTML側に最初からバッジを置く -->
+    <p class="item" id="tax"><span class="badge">C</span> 税金（20.315%）：- 円</p>
+
+    <!-- D：HTML側に最初からバッジを置く -->
     <label class="loan-label"><span class="badge">D</span> 借入残高（円）</label>
-
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
-    <p class="result" id="tedori">手取り：計算中…</p>
-    <p class="formula" id="formula">
-    計算式 = <span class="badge">A</span> − <span class="badge">B</span> − <span class="badge">C</span> − <span class="badge">D</span>
-</p>
 
+    <p class="result" id="tedori">手取り：計算中…</p>
+
+    <p class="formula" id="formula">
+        計算式 = <span class="badge">A</span> − <span class="badge">B</span> − <span class="badge">C</span> − <span class="badge">D</span>
+    </p>
 </div>
 
 <script>
@@ -138,7 +149,7 @@ loanInput.addEventListener("input", () => {
     if (window.latestPrice) calculate(window.latestPrice);
 });
 
-// 計算式D
+// 計算式
 function calculate(price) {
     const loan = Number(loanInput.value.replace(/,/g, ""));
 
@@ -147,17 +158,21 @@ function calculate(price) {
     const tax = Math.max(profit, 0) * TAX_RATE;
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
+    // A
     document.getElementById("sellAmount").innerHTML =
-    '<span class="badge">A</span> 売却代金：' + sellAmount.toLocaleString() + ' 円';
+        '<span class="badge">A</span> 売却代金：' + sellAmount.toLocaleString() + ' 円';
 
-    document.getElementById("profit").textContent =
-        "売却益（課税対象）：" + profit.toLocaleString() + " 円";
+    // 利益（badgeは任意）
+    document.getElementById("profit").innerHTML =
+        '売却益（課税対象）：' + profit.toLocaleString() + ' 円';
 
+    // C
     document.getElementById("tax").innerHTML =
-    '<span class="badge">C</span> 税金（20.315%）：' + Math.round(tax).toLocaleString() + ' 円';
+        '<span class="badge">C</span> 税金（20.315%）：' + Math.round(tax).toLocaleString() + ' 円';
 
-    document.getElementById("tedori").textContent =document.getElementById("tedori").textContent=
-        "手取り：" + tedori.toLocaleString() + " 円";
+    // 手取り
+    document.getElementById("tedori").innerHTML =
+        '手取り：' + tedori.toLocaleString() + ' 円';
 }
 
 // 株価取得（AllOrigins）
