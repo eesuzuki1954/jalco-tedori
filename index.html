@@ -9,7 +9,7 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     padding: 20px;
-    background: #f2f2f7; /* iPhoneの設定アプリ背景色 */
+    background: #f2f2f7;
 }
 
 /* カード全体をiOS風に */
@@ -21,15 +21,35 @@ body {
     border: 1px solid #e5e5ea;
 }
 
-/* 各項目を薄い区切り線で揃える */
-.item {
+/* 行を左右2カラムにする */
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 左側（ラベル） */
+.label {
     font-size: 22px;
+    display: flex;
+    align-items: center;
+}
+
+/* 右側（金額） */
+.value {
+    font-size: 22px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 区切り線 */
+.item {
     margin-top: 14px;
     padding-bottom: 6px;
     border-bottom: 1px solid #e5e5ea;
 }
 
-/* D 借入残高（円）を見出し風に強調 */
+/* D 借入残高（円） */
 .loan-label {
     font-size: 26px;
     font-weight: 600;
@@ -38,7 +58,7 @@ body {
     display: block;
 }
 
-/* 入力欄をiOS標準フォーム風に */
+/* 入力欄 */
 input {
     width: 100%;
     padding: 12px;
@@ -49,9 +69,9 @@ input {
     background: #fafafa;
 }
 
-/* 手取りを強調（淡い黄色カード） */
+/* 手取り（黄色カード） */
 .result {
-    font-size: 25px;
+    font-size: 27px;
     font-weight: 700;
     margin-top: 22px;
     margin-bottom: 4px;
@@ -62,17 +82,17 @@ input {
     border: 1px solid #f0e6a8;
 }
 
-/* 計算式を手取りのすぐ下に寄せる */
+/* 計算式 */
 .formula {
     font-size: 18px;
     margin-top: 0px;
     color: #666;
 }
 
-/* A/B/C/D バッジ（青背景＋白文字） */
+/* A/B/C/D バッジ */
 .badge {
     display: inline-block;
-    background: #007aff; /* iOS標準ブルー */
+    background: #007aff;
     color: white;
     font-weight: 700;
     padding: 2px 8px;
@@ -80,13 +100,6 @@ input {
     margin-right: 6px;
     font-size: 18px;
 }
-/* 円の改行を防ぐ    
-.value {
-    display: inline-block;
-    white-space: nowrap;
-}
-}
-    
 </style>
 </head>
 
@@ -97,27 +110,43 @@ input {
     <p class="item" id="price">株価：取得中…</p>
     <p class="item">株数：218,692 株</p>
 
-    <!-- A：HTML側に最初からバッジを置く（即表示のため） -->
-    <p class="item" id="sellAmount"><span class="badge">A</span> 売却代金：-</p>
+    <!-- A 売却代金（2カラム） -->
+    <p class="item row" id="sellAmount">
+        <span class="label"><span class="badge">A</span> 売却代金：</span>
+        <span class="value">- 円</span>
+    </p>
 
     <p class="item">取得原価：51,200,088 円</p>
 
-    <!-- B：固定なのでHTMLに置いてOK -->
-    <p class="item"><span class="badge">B</span> 約定手数料：250,000 円</p>
+    <!-- B 約定手数料（固定） -->
+    <p class="item row">
+        <span class="label"><span class="badge">B</span> 約定手数料：</span>
+        <span class="value">250,000 円</span>
+    </p>
 
-    <!-- 利益（badgeは任意） -->
-    <p class="item" id="profit">売却益（課税対象）：-</p>
+    <!-- 売却益 -->
+    <p class="item row" id="profit">
+        <span class="label">売却益（課税対象）：</span>
+        <span class="value">- 円</span>
+    </p>
 
-    <!-- C：HTML側に最初からバッジを置く -->
-    <p class="item" id="tax"><span class="badge">C</span> 税金（20.315%）：- 円</p>
+    <!-- C 税金 -->
+    <p class="item row" id="tax">
+        <span class="label"><span class="badge">C</span> 税金（20.315%）：</span>
+        <span class="value">- 円</span>
+    </p>
 
-    <!-- D：HTML側に最初からバッジを置く -->
+    <!-- D 借入残高 -->
     <label class="loan-label"><span class="badge">D</span> 借入残高（円）</label>
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
 
-    <p class="result" id="tedori">手取り：計算中…</p>
+    <!-- 手取り（2カラム） -->
+    <p class="result row" id="tedori">
+        <span class="label">手取り：</span>
+        <span class="value">計算中…</span>
+    </p>
 
-    <p class="formula" id="formula">
+    <p class="formula">
         計算式 = <span class="badge">A</span> − <span class="badge">B</span> − <span class="badge">C</span> − <span class="badge">D</span>
     </p>
 </div>
@@ -125,8 +154,8 @@ input {
 <script>
 // 固定値
 const SHARES = 218692;
-const COST = 51200088;   // 取得原価
-const FEE = 250000;      // 手数料
+const COST = 51200088;
+const FEE = 250000;
 const TAX_RATE = 0.20315;
 
 // ▼ 日付に応じた借入残高の初期値
@@ -135,7 +164,6 @@ function getInitialLoan() {
     const y = today.getFullYear();
     const m = today.getMonth() + 1;
     const d = today.getDate();
-
     const dateNum = y * 10000 + m * 100 + d;
 
     if (dateNum <= 20260601) return 48400000;
@@ -159,31 +187,25 @@ loanInput.addEventListener("input", () => {
 // 計算式
 function calculate(price) {
     const loan = Number(loanInput.value.replace(/,/g, ""));
-
     const sellAmount = price * SHARES;
     const profit = sellAmount - COST - FEE;
     const tax = Math.max(profit, 0) * TAX_RATE;
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
-    // A
-    document.getElementById("sellAmount").innerHTML =
-    '<span class="badge">A</span> 売却代金：<span class="value">' +
-    sellAmount.toLocaleString() + ' 円</span>';
+    document.querySelector("#sellAmount .value").textContent =
+        sellAmount.toLocaleString() + " 円";
 
-    // 利益（badgeは任意）
-    document.getElementById("profit").innerHTML =
-        '売却益（課税対象）：' + profit.toLocaleString() + ' 円';
+    document.querySelector("#profit .value").textContent =
+        profit.toLocaleString() + " 円";
 
-    // C
-    document.getElementById("tax").innerHTML =
-        '<span class="badge">C</span> 税金（20.315%）：' + Math.round(tax).toLocaleString() + ' 円';
+    document.querySelector("#tax .value").textContent =
+        Math.round(tax).toLocaleString() + " 円";
 
-    // 手取り
-    document.getElementById("tedori").innerHTML =
-    '手取り：<span class="value">' + tedori.toLocaleString() + ' 円</span>';'手取り:' + tedori.toLocaleString() + ' 円';
+    document.querySelector("#tedori .value").textContent =
+        tedori.toLocaleString() + " 円";
 }
 
-// 株価取得（AllOrigins）
+// 株価取得
 async function fetchPrice() {
     const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
 
@@ -192,7 +214,6 @@ async function fetchPrice() {
         const data = await res.json();
 
         const price = data.chart.result[0].meta.regularMarketPrice;
-
         window.latestPrice = price;
 
         document.getElementById("price").textContent =
