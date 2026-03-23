@@ -107,18 +107,31 @@ input {
 <div class="box">
     <h2>JHD株式 手取り計算</h2>
 
-    <p class="item" id="price">株価：取得中…</p>
-    <p class="item">株数：218,692 株</p>
+    <!-- 株価 -->
+    <p class="item row" id="price">
+        <span class="label">株価：</span>
+        <span class="value">取得中…</span>
+    </p>
 
-    <!-- A 売却代金（2カラム） -->
+    <!-- 株数 -->
+    <p class="item row">
+        <span class="label">株数：</span>
+        <span class="value">218,692 株</span>
+    </p>
+
+    <!-- A 売却代金 -->
     <p class="item row" id="sellAmount">
         <span class="label"><span class="badge">A</span> 売却代金：</span>
         <span class="value">- 円</span>
     </p>
 
-    <p class="item">取得原価：51,200,088 円</p>
+    <!-- 取得原価 -->
+    <p class="item row">
+        <span class="label">取得原価：</span>
+        <span class="value">51,200,088 円</span>
+    </p>
 
-    <!-- B 約定手数料（固定） -->
+    <!-- B 約定手数料 -->
     <p class="item row">
         <span class="label"><span class="badge">B</span> 約定手数料：</span>
         <span class="value">250,000 円</span>
@@ -132,7 +145,7 @@ input {
 
     <!-- C 税金 -->
     <p class="item row" id="tax">
-        <span class="label"><span class="badge">C</span> 税金（約20%）：</span>
+        <span class="label"><span class="badge">C</span> 税金（20.315%）：</span>
         <span class="value">- 円</span>
     </p>
 
@@ -140,7 +153,7 @@ input {
     <label class="loan-label"><span class="badge">D</span> 借入残高（円）</label>
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
 
-    <!-- 手取り（2カラム） -->
+    <!-- 手取り -->
     <p class="result row" id="tedori">
         <span class="label">手取り：</span>
         <span class="value">計算中…</span>
@@ -192,6 +205,9 @@ function calculate(price) {
     const tax = Math.max(profit, 0) * TAX_RATE;
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
+    document.querySelector("#price .value").textContent =
+        price.toLocaleString() + " 円";
+
     document.querySelector("#sellAmount .value").textContent =
         sellAmount.toLocaleString() + " 円";
 
@@ -216,12 +232,9 @@ async function fetchPrice() {
         const price = data.chart.result[0].meta.regularMarketPrice;
         window.latestPrice = price;
 
-        document.getElementById("price").textContent =
-            "株価：" + price.toLocaleString() + " 円（時価）";
-
         calculate(price);
     } catch (e) {
-        document.getElementById("price").textContent = "株価：取得失敗";
+        document.querySelector("#price .value").textContent = "取得失敗";
     }
 }
 
