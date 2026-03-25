@@ -223,7 +223,8 @@ function calculate(price) {
 
 // 株価取得
 async function fetchPrice() {
-    const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
+    // const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
+    const url = "https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
 
     try {
         const res = await fetch(url);
