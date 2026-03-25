@@ -234,23 +234,23 @@ async function fetchPrice() {
         const price = result.meta.regularMarketPrice;
         const prevClose = result.meta.previousClose;
 
-        // 前日比計算        // 前日比計算
+        // 前日比計算
         const diff = Math.round(price - prevClose);
 
         let diffText = "";
         let color = "black";
 
         // 条件分岐
-        if (diff > 0) {もし(diff > 0) {
+        if (diff > 0) {
             diffText = `＋${diff.toLocaleString()}円`;
             color = "blue";
         } else if (diff < 0) {
             diffText = `－${Math.abs(diff).toLocaleString()}円`;
             color = "red";color = 「赤」;
-        } else {} そうでなければ {} そうでなければ {
+        } else {
             diffText = "－円";    diffText = "－円";
             color = "black";color = 「黒」;
-        }}
+        }
 
         // 表示
         const priceEl = document.querySelector("#price .value");
