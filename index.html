@@ -227,13 +227,17 @@ function calculate(price) {
 }
 
 // 株価取得
-async function fetchPrice() {
+// 株価取得（リトライ付き）
+async function fetchPrice(retry = 3) {
     const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
 
     try {
         const res = await fetch(url);
-        const data = await res.json();
 
+        // ★ ここ重要（520対策）
+        if (!res.ok) throw new Error("HTTP error: " + res.status);
+
+        const data = await res.json();
         const result = data.chart.result[0];
 
         const price = result.meta.regularMarketPrice;
@@ -245,7 +249,6 @@ async function fetchPrice() {
         let diffText = "";
         let color = "black";
 
-        // 条件分岐
         if (diff > 0) {
             diffText = `＋${diff.toLocaleString()}円`;
             color = "blue";
@@ -254,22 +257,32 @@ async function fetchPrice() {
             color = "red";
         } else {
             diffText = "－円";
-            color = "black";
         }
 
         // 表示
-        const priceEl = document.querySelector("#price .value");const priceEl = document.querySelector("#price .value");
+        const priceEl = document.querySelector("#price .value");
+
         priceEl.innerHTML =
-            `${price.toLocaleString()} 円` +'${price.toLocaleString()} 円' +
+            `${price.toLocaleString()} 円` +
             ` <span class="diff" style="color:${color}">（前日比：${diffText}）</span>`;
-        
+
         window.latestPrice = price;
         calculate(price);
 
     } catch (e) {
-        document.querySelector("#price .value").textContent = "取得失敗";
+        console.log("エラー発生:", e);
+
+        // ★ リトライ処理
+        if (retry > 0) {
+            console.log(`再試行します... 残り${retry}回`);
+            setTimeout(() => fetchPrice(retry - 1), 1500); // 1.5秒後
+        } else {
+            document.querySelector("#price .value").textContent = "取得失敗";
+        }
     }
 }
+
+
 
 fetchPrice();
 </script>
