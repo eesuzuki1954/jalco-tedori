@@ -226,45 +226,69 @@ function calculate(price) {
         tedori.toLocaleString() + " 円";
 }
 
-// 株価取得（リトライ付き）
+// 表示ロジック
+function updatePrice(price, diff) {
+    let diffText = "";
+    let color = "black";color = 「黒」とします。
+
+    if (diff > 0) {
+        diffText = `＋${diff.toLocaleString()}円`;
+        color = "blue";
+    } else if (diff < 0) {
+        diffText = `－${Math.abs(diff).toLocaleString()}円`;
+        color = "red";
+    } else {
+        diffText = "－円";
+    }
+
+    const priceEl = document.querySelector("#price .value");
+
+    priceEl.innerHTML =
+        `${price.toLocaleString()} 円` +
+        ` <span class="diff" style="color:${color}">（前日比：${diffText}）</span>`;
+
+    window.latestPrice = price;
+    calculate(price);
+}
+
+// 株価取得（本命：Flask → ダメならYahoo直）
 async function fetchPrice() {
     try {
+        console.log("① Flask API呼び出し");
+
         const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
 
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
 
-        const price = data.price;
-        const diff = Math.round(data.diff);
-
-        let diffText = "";
-        let color = "black";
-
-        if (diff > 0) {
-            diffText = `＋${diff}`;
-            color = "blue";
-        } else if (diff < 0) {
-            diffText = `▲${Math.abs(diff)}`;
-            color = "red";
-        } else {
-            diffText = "－";
-        }
-
-        const priceEl = document.querySelector("#price .value");
-
-        priceEl.innerHTML =
-            `${price.toLocaleString()} 円` +
-            ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
-
-        window.latestPrice = price;
-        calculate(price);
+        updatePrice(data.price, Math.round(data.diff));
 
     } catch (e) {
-    console.log("エラー:", e);
-    document.querySelector("#price .value").textContent = "取得失敗";
+        console.log("② Flask失敗 → 直接Yahooへ", e);
+
+        // フォールバック（Yahoo API）
+        try {
+            const res = await fetch(
+                "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
+            );
+
+            const data = await res.json();
+            const result = data.chart.result[0].meta;
+
+            const price = result.regularMarketPrice;
+            const diff = Math.round(price - result.previousClose);
+
+            updatePrice(price, diff);
+
+        } catch (e2) {
+            console.log("③ 完全失敗", e2);
+            document.querySelector("#price .value").textContent = "取得失敗";
+        }
     }
 }
+
+
 
 // 初回実行
 fetchPrice();
