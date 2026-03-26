@@ -261,7 +261,8 @@ async function fetchPrice() {
         calculate(price);
 
     } catch (e) {
-        fetchPriceViaProxy(); // 保険
+    console.log("エラー:", e);
+    document.querySelector("#price .value").textContent = "取得失敗";
     }
 }
 
