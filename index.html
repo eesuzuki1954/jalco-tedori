@@ -205,8 +205,8 @@ function calculate(price) {
     const tax = Math.max(profit, 0) * TAX_RATE;
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
-    document.querySelector("#price .value").textContent =
-        price.toLocaleString() + " 円";
+    // document.querySelector("#price .value").textContent =
+    //     price.toLocaleString() + " 円";
 
     document.querySelector("#sellAmount .value").textContent =
         sellAmount.toLocaleString() + " 円";
