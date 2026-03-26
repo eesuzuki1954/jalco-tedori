@@ -100,6 +100,11 @@ input {
     margin-right: 6px;
     font-size: 18px;
 }
+    
+.diff {
+    font-size: 16px;   /* ←ここで調整 */
+    font-weight: normal;
+}
 </style>
 </head>
 
@@ -254,9 +259,11 @@ async function fetchPrice() {
 
         // 表示
         const priceEl = document.querySelector("#price .value");
+        priceEl.innerHTML =
+            `${price.toLocaleString()} 円` +
+            ` <span class="diff">（前日比${diffText}）</span>`;
 
-        priceEl.textContent = `${price.toLocaleString()} 円（前日比${diffText}）`;
-        priceEl.style.color = color;
+        priceEl.style.color = "black"; // ←全体は黒に戻す
 
         window.latestPrice = price;
         calculate(price);
