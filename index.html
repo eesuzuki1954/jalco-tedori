@@ -261,7 +261,7 @@ async function fetchPrice() {
         const priceEl = document.querySelector("#price .value");const priceEl = document.querySelector("#price .value");
         priceEl.innerHTML =
             `${price.toLocaleString()} 円` +'${price.toLocaleString()} 円' +
-            ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
+            ` <span class="diff" style="color:${color}">（前日比：${diffText}）</span>`;
         
         window.latestPrice = price;
         calculate(price);
