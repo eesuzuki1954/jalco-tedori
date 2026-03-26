@@ -227,39 +227,30 @@ function calculate(price) {
 }
 
 // 株価取得（リトライ付き）
-async function fetchPrice(retry = 3) {
-    // const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
-    const url = "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
+async function fetchPrice() {
+    try {
+        const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
 
-    try {試してみて {
-        const res = await fetch(url);
-
-        // ★ ここ重要（520対策）
-        if (!res.ok) throw new Error("HTTP error: " + res.status);
+        if (!res.ok) throw new Error();
 
         const data = await res.json();
-        const result = data.chart.result[0];
 
-        const price = result.meta.regularMarketPrice;
-        const prevClose = result.meta.previousClose;
-
-        // 前日比計算
-        const diff = Math.round(price - prevClose);
+        const price = data.price;
+        const diff = Math.round(data.diff);
 
         let diffText = "";
         let color = "black";
 
         if (diff > 0) {
-            diffText = `＋${diff.toLocaleString()}円`;
+            diffText = `＋${diff}円`;
             color = "blue";
         } else if (diff < 0) {
-            diffText = `－${Math.abs(diff).toLocaleString()}円`;
+            diffText = `－${Math.abs(diff)}円`;
             color = "red";
         } else {
             diffText = "－円";
         }
 
-        // 表示
         const priceEl = document.querySelector("#price .value");
 
         priceEl.innerHTML =
@@ -270,19 +261,9 @@ async function fetchPrice(retry = 3) {
         calculate(price);
 
     } catch (e) {
-        console.log("エラー発生:", e);
-
-        // ★ リトライ処理
-        if (retry > 0) {
-            console.log(`再試行します... 残り${retry}回`);
-            setTimeout(() => fetchPrice(retry - 1), 1500); // 1.5秒後
-        } else {
-            document.querySelector("#price .value").textContent = "取得失敗";
-        }
+        fetchPriceViaProxy(); // 保険
     }
 }
-
-
 
 fetchPrice();
 </script>
