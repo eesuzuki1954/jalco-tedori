@@ -263,7 +263,7 @@ async function fetchPrice() {
             `${price.toLocaleString()} 円` +
             ` <span class="diff">（前日比${diffText}）</span>`;
 
-        priceEl.style.color = "black"; // ←全体は黒に戻す
+        // priceEl.style.color = "black"; // ←全体は黒に戻す
 
         window.latestPrice = price;
         calculate(price);
