@@ -247,6 +247,13 @@ function updatePrice(price, diff) {
         `${price.toLocaleString()} 円` +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
+    // ★ ここ追加
+    const now = new Date();
+    const time = now.toLocaleTimeString();
+
+    priceEl.innerHTML +=
+        ` <span style="font-size:12px;color:gray;">(${time})</span>`;
+
     window.latestPrice = price;
     calculate(price);
 }
