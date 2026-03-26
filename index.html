@@ -242,13 +242,13 @@ async function fetchPrice() {
         let color = "black";
 
         if (diff > 0) {
-            diffText = `＋${diff}円`;
+            diffText = `＋${diff}`;
             color = "blue";
         } else if (diff < 0) {
-            diffText = `－${Math.abs(diff)}円`;
+            diffText = `－${Math.abs(diff)}`;
             color = "red";
         } else {
-            diffText = "－円";
+            diffText = "－";
         }
 
         const priceEl = document.querySelector("#price .value");
