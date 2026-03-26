@@ -247,11 +247,29 @@ function updatePrice(price, diff) {
         `${price.toLocaleString()} 円` +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
-    // ★ ここ追加
+    // ★ ここ追加（更新時刻表示）
     const now = new Date();
-    const time = now.toLocaleTimeString();
-    priceEl.innerHTML +=
-    `<br><span class="diff" style="color:gray; display:block; text-align:right;">(更新 ${time})</span>`;
+    let timeStr;let timeStr;
+
+    // 東証の取引時間判定
+    const endHour = 15;
+    const endMinute = 30;
+    const startHour = 9;
+
+    if (
+        (now.getHours() > endHour) ||
+        (now.getHours() === endHour && now.getMinutes() >= endMinute) ||
+        (now.getHours() < startHour)
+    ) {
+        // 取引終了後または翌朝9時前 → 15:30固定
+        timeStr = "15:30:00";timeStr = "15:30:00";
+    } else {
+        // 取引時間中 → 現在時刻
+        timeStr = now.toLocaleTimeString();
+    }}
+
+    priceEl.innerHTML +=priceEl.innerHTML +=
+        `<br><span class="diff" style="color:gray; display:block; text-align:right;">(更新 ${timeStr})</span>`;
 
     window.latestPrice = price;
     calculate(price);
