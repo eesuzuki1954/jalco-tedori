@@ -226,12 +226,12 @@ function calculate(price) {
         tedori.toLocaleString() + " 円";
 }
 
-// 株価取得
 // 株価取得（リトライ付き）
 async function fetchPrice(retry = 3) {
-    const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
+    // const url = "https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
+    const url = "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T";
 
-    try {
+    try {試してみて {
         const res = await fetch(url);
 
         // ★ ここ重要（520対策）
