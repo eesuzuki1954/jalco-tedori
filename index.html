@@ -245,7 +245,7 @@ async function fetchPrice() {
             diffText = `＋${diff}`;
             color = "blue";
         } else if (diff < 0) {
-            diffText = `－${Math.abs(diff)}`;
+            diffText = `▲${Math.abs(diff)}`;
             color = "red";
         } else {
             diffText = "－";
@@ -255,7 +255,7 @@ async function fetchPrice() {
 
         priceEl.innerHTML =
             `${price.toLocaleString()} 円` +
-            ` <span class="diff" style="color:${color}">（前日比：${diffText}）</span>`;
+            ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
         window.latestPrice = price;
         calculate(price);
