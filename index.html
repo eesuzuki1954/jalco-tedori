@@ -229,13 +229,13 @@ function calculate(price) {
 // 表示ロジック
 function updatePrice(price, diff) {
     let diffText = "";
-    let color = "black";color = 「黒」とします。
+    let color = "black";
 
     if (diff > 0) {
         diffText = `＋${diff.toLocaleString()}円`;
         color = "blue";
     } else if (diff < 0) {
-        diffText = `－${Math.abs(diff).toLocaleString()}円`;
+        diffText = `▲${Math.abs(diff).toLocaleString()}円`;
         color = "red";
     } else {
         diffText = "－円";
