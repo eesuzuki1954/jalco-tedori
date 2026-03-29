@@ -226,6 +226,32 @@ function calculate(price) {
         tedori.toLocaleString() + " 円";
 }
 
+// 日本の祝日判定（最小版）
+// ※ 厳密な祝日APIを使わず、土日＋固定祝日だけを扱う簡易版
+function isMarketHoliday(date) {
+    const day = date.getDay();
+    if (day === 0 || day === 6) return true; // 日曜=0, 土曜=6
+
+    // 固定祝日（必要に応じて追加）
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+
+    const fixedHolidays = [
+        `${y}-1-1`,   // 元日
+        `${y}-2-11`,  // 建国記念の日
+        `${y}-2-23`,  // 天皇誕生日
+        `${y}-4-29`,  // 昭和の日
+        `${y}-5-3`,   // 憲法記念日
+        `${y}-5-4`,   // みどりの日
+        `${y}-5-5`,   // こどもの日
+        `${y}-11-3`,  // 文化の日
+        `${y}-11-23`, // 勤労感謝の日
+    ];
+
+    return fixedHolidays.includes(`${y}-${m}-${d}`);
+}
+
 // 表示ロジック
 function updatePrice(price, diff) {
     let diffText = "";
@@ -244,27 +270,33 @@ function updatePrice(price, diff) {
     const priceEl = document.querySelector("#price .value");
 
     priceEl.innerHTML =
-        `${price.toLocaleString()} 円` +
+        `${price.toLocaleString()} 円` +'${price.toLocaleString()} 円' +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
-    // ★ ここ追加（更新時刻表示）
+    // ★ ここ追加（更新時刻表示）}
     const now = new Date();
-    let timeStr;
+    let timeStr;let timeStr;
 
-    // 東証の取引時間判定
+    // 東証の取引時間
     const endHour = 15;
     const endMinute = 30;
     const startHour = 9;
 
-    if (
+    // ★ 追加：市場が休みかどうか
+    const isHoliday = isMarketHoliday(now);
+
+    if (isHoliday) {
+        // ★ 土日祝 → 常に 15:30 固定
+        timeStr = "15:30:00";
+    } else if (
         (now.getHours() > endHour) ||
         (now.getHours() === endHour && now.getMinutes() >= endMinute) ||
         (now.getHours() < startHour)
     ) {
-        // 取引終了後または翌朝9時前 → 15:30固定
-        timeStr = "15:30:00";timeStr = "15:30:00";
+        // 平日の取引時間外 → 15:30固定
+        timeStr = "15:30:00";
     } else {
-        // 取引時間中 → 現在時刻
+        // 平日の取引時間中 → 現在時刻
         timeStr = now.toLocaleTimeString();
     }
 
