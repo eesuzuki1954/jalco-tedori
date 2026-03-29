@@ -273,6 +273,9 @@ function updatePrice(price, diff) {
         `${price.toLocaleString()} 円` +'${price.toLocaleString()} 円' +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
+    // ★ テスト用フラグ（平日でも土日祝扱いにする）
+    const FORCE_HOLIDAY_TEST = true;
+    
     // ★ ここ追加（更新時刻表示）}
     const now = new Date();
     let timeStr;let timeStr;
@@ -283,7 +286,8 @@ function updatePrice(price, diff) {
     const startHour = 9;
 
     // ★ 追加：市場が休みかどうか
-    const isHoliday = isMarketHoliday(now);
+    // ★ 土日祝判定（テストモード対応）
+    const isHoliday = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
     if (isHoliday) {
         // ★ 土日祝 → 常に 15:30 固定
