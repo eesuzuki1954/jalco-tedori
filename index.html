@@ -206,6 +206,27 @@ loanInput.addEventListener("input", () => {
     if (window.latestPrice) calculate(window.latestPrice);
 });
 
+// ★★★ 時間帯ロジック（あなたの元コードの復活版） ★★★
+function getDisplayTime() {
+    const now = new Date();
+    const day = now.getDay(); // 0=日,6=土
+    const isWeekend = (day === 0 || day === 6);
+
+    // 土日 → 15:30固定
+    if (isWeekend) return "15:30:00";
+
+    const h = now.getHours();
+    const m = now.getMinutes();
+
+    // 平日でも 15:30〜翌9:00 → 15:30固定
+    if (h > 15 || (h === 15 && m >= 30) || h < 9) {
+        return "15:30:00";
+    }
+
+    // 取引時間内（9:00〜15:29）だけ現在時刻
+    return now.toLocaleTimeString();
+}
+
 // 計算式
 function calculate(price) {
     const loan = Number(loanInput.value.replace(/,/g, ""));
@@ -270,12 +291,10 @@ async function fetchPrice() {
 
         if (FORCE_HOLIDAY_TEST) {
             // ★ 土日祝テストモード：
-            // Flask の prevClose を「前日終値」として固定表示（前日比 0・時刻 15:30:00）
             updatePrice(data.prevClose, 0, "15:30:00");
         } else {
             // ★ 本番モード：
-            const now = new Date();
-            updatePrice(data.price, Math.round(data.diff), now.toLocaleTimeString());
+            updatePrice(data.price, Math.round(data.diff), getDisplayTime());
         }
 
     } catch (e) {
@@ -314,8 +333,7 @@ async function fetchPrice() {
             const price = result.meta.regularMarketPrice;
             const diff = Math.round(price - prevClose);
 
-            const now = new Date();
-            updatePrice(price, diff, now.toLocaleTimeString());
+            updatePrice(price, diff, getDisplayTime());
 
         } catch (e2) {
             document.querySelector("#price .value").textContent = "取得失敗";
