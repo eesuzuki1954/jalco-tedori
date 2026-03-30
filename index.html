@@ -310,6 +310,12 @@ function updatePrice(price, diff) {
 
 // 株価取得（本命：Flask → ダメならYahoo直）
 async function fetchPrice() {
+    // ★ 土日祝テスト中は Flask を呼ばない（これが必須）
+    if (FORCE_HOLIDAY_TEST) {
+        updatePrice(window.latestPrice ?? 0, 0);
+        return;
+    }
+    
     try {
         console.log("① Flask API呼び出し");
 
