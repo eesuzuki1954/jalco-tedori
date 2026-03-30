@@ -203,7 +203,7 @@ loanInput.addEventListener("input", () => {
     raw = raw.replace(/\D/g, "");
     loanInput.value = Number(raw).toLocaleString();
     if (window.latestPrice) calculate(window.latestPrice);
-};
+}
 
 // 計算式
 function calculate(price) {
