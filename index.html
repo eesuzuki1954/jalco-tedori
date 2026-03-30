@@ -169,7 +169,10 @@ input {
     </p>
 </div>
 
-<script>
+<script
+// ★ テスト用フラグ（平日でも土日祝扱いにするテストは：「true」にする）
+const FORCE_HOLIDAY_TEST = true;   # false;
+
 // 固定値
 const SHARES = 218692;
 const COST = 51200088;
@@ -272,9 +275,6 @@ function updatePrice(price, diff) {
     priceEl.innerHTML =
         `${price.toLocaleString()} 円` +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
-
-    // ★ テスト用フラグ（平日でも土日祝扱いにするテストは：「true」にする）
-    const FORCE_HOLIDAY_TEST = true;   # false;
 
     // ★ ここ追加（更新時刻表示）
     const now = new Date();
