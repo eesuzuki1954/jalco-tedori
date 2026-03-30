@@ -118,6 +118,18 @@ input {
         <span class="value">取得中…</span>
     </p>
 
+    <!-- 前日比 -->
+    <p class="item row" id="diff">
+        <span class="label">前日比：</span>
+        <span class="value">取得中…</span>
+    </p>
+
+    <!-- 更新時刻 -->
+    <p class="item row" id="time">
+        <span class="label">更新：</span>
+        <span class="value">取得中…</span>
+    </p>
+
     <!-- 株数 -->
     <p class="item row">
         <span class="label">株数：</span>
@@ -173,7 +185,7 @@ input {
 // ===============================
 // 設定
 // ===============================
-const FORCE_HOLIDAY_TEST = true;   // ← 土日祝テストON/OFFフラグ（平日でも土日祝扱いにするテストは true に）
+const FORCE_HOLIDAY_TEST = true;   // 土日祝テストON/OFF
 
 const STOCK_API = "https://eesuzuki1978.pythonanywhere.com/stock";
 const YAHOO_API =
@@ -186,8 +198,6 @@ function isMarketHoliday(date) {
     const day = date.getDay();
     if (day === 0 || day === 6) return true; // 土日
 
-    // 日本の祝日（必要なら追加）
-    const y = date.getFullYear();
     const m = date.getMonth() + 1;
     const d = date.getDate();
     const md = `${m}/${d}`;
@@ -217,8 +227,8 @@ async function fetchPrice() {
         const data = await res.json();
         if (data.error) throw new Error("Flask returned error");
 
-        const price = data.price;          // 当日値
-        const prev = data.prev_close;      // 前日終値
+        const price = data.price;      // 当日値
+        const prev  = data.prev_close; // 前日終値
 
         applyDisplayLogic(price, prev);
         return;
@@ -233,14 +243,16 @@ async function fetchPrice() {
         const data = await res.json();
         const meta = data.chart.result[0].meta;
 
-        const price = meta.regularMarketPrice;   // 当日値
-        const prev = meta.previousClose;         // 前日終値
+        const price = meta.regularMarketPrice; // 当日値
+        const prev  = meta.previousClose;      // 前日終値
 
         applyDisplayLogic(price, prev);
 
     } catch (e2) {
         console.log("③ 完全失敗", e2);
         document.querySelector("#price .value").textContent = "取得失敗";
+        document.querySelector("#diff .value").textContent  = "－円";
+        document.querySelector("#time .value").textContent  = "--:--:--";
     }
 }
 
@@ -255,14 +267,17 @@ function applyDisplayLogic(price, prevClose) {
     let displayDiff;
 
     if (isHoliday) {
-        // ★ 土日祝（＋テスト）は「直近営業日の終値」を表示
+        // 土日祝（＋テスト）は直近営業日の終値を表示
         displayPrice = prevClose;
-        displayDiff = 0;   // 前日比は 0 → 「－円」
+        displayDiff  = 0; // 前日比は 0 → 「－円」
     } else {
-        // ★ 平日は当日値と前日比
+        // 平日は当日値と前日比
         displayPrice = price;
-        displayDiff = Math.round(price - prevClose);
+        displayDiff  = Math.round(price - prevClose);
     }
+
+    // 手取り計算用に保持
+    window.latestPrice = displayPrice;
 
     updatePrice(displayPrice, displayDiff);
 }
@@ -272,8 +287,8 @@ function applyDisplayLogic(price, prevClose) {
 // ===============================
 function updatePrice(price, diff) {
     const priceEl = document.querySelector("#price .value");
-    const diffEl = document.querySelector("#diff .value");
-    const timeEl = document.querySelector("#time .value");
+    const diffEl  = document.querySelector("#diff .value");
+    const timeEl  = document.querySelector("#time .value");
 
     priceEl.textContent = `${price} 円`;
 
@@ -285,12 +300,10 @@ function updatePrice(price, diff) {
         diffEl.textContent = `${diff} 円`;
     }
 
-    // 時刻表示
     const now = new Date();
     const isHoliday = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
     let timeStr;
-
     if (isHoliday) {
         timeStr = "15:30:00";
     } else {
@@ -304,13 +317,39 @@ function updatePrice(price, diff) {
 }
 
 // ===============================
+// 手取り計算（仮：株価 × 株数 − 手数料 − 税金 − 借入）
+// ===============================
+function calculate(price) {
+    const shares = 218692;
+    const fee    = 250000;
+    const cost   = 51200088;
+
+    const loanRaw = document.getElementById("loan").value.replace(/,/g, "");
+    const loan    = loanRaw === "" ? 0 : Number(loanRaw);
+
+    const sellAmount = price * shares;
+    const profit     = sellAmount - cost - fee;
+    const tax        = Math.floor(profit * 0.2);
+    const tedori     = sellAmount - fee - tax - loan;
+
+    document.querySelector("#sellAmount .value").textContent =
+        `${sellAmount.toLocaleString()} 円`;
+    document.querySelector("#profit .value").textContent =
+        `${profit.toLocaleString()} 円`;
+    document.querySelector("#tax .value").textContent =
+        `${tax.toLocaleString()} 円`;
+    document.querySelector("#tedori .value").textContent =
+        `${tedori.toLocaleString()} 円`;
+}
+
+// ===============================
 // 3桁区切り入力
 // ===============================
 const loanInput = document.getElementById("loan");
 loanInput.addEventListener("input", () => {
     let raw = loanInput.value.replace(/,/g, "");
     raw = raw.replace(/\D/g, "");
-    loanInput.value = Number(raw).toLocaleString();
+    loanInput.value = raw === "" ? "" : Number(raw).toLocaleString();
     if (window.latestPrice) calculate(window.latestPrice);
 });
 
