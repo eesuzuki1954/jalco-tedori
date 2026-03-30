@@ -252,7 +252,6 @@ function isMarketHoliday(date) {
     return fixedHolidays.includes(`${y}-${m}-${d}`);
 }
 
-// 表示ロジック
 function updatePrice(price, diff) {
     let diffText = "";
     let color = "black";
@@ -275,7 +274,7 @@ function updatePrice(price, diff) {
 
     // ★ テスト用フラグ（平日でも土日祝扱いにする）
     const FORCE_HOLIDAY_TEST = true;
-    
+
     // ★ ここ追加（更新時刻表示）
     const now = new Date();
     let timeStr;
@@ -285,22 +284,18 @@ function updatePrice(price, diff) {
     const endMinute = 30;
     const startHour = 9;
 
-    // ★ 追加：市場が休みかどうか
     // ★ 土日祝判定（テストモード対応）
     const isHoliday = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
     if (isHoliday) {
-        // ★ 土日祝 → 常に 15:30 固定
         timeStr = "15:30:00";
     } else if (
         (now.getHours() > endHour) ||
         (now.getHours() === endHour && now.getMinutes() >= endMinute) ||
         (now.getHours() < startHour)
     ) {
-        // 平日の取引時間外 → 15:30固定
         timeStr = "15:30:00";
     } else {
-        // 平日の取引時間中 → 現在時刻
         timeStr = now.toLocaleTimeString();
     }
 
@@ -310,6 +305,7 @@ function updatePrice(price, diff) {
     window.latestPrice = price;
     calculate(price);
 }
+
 
 // 株価取得（本命：Flask → ダメならYahoo直）
 async function fetchPrice() {
