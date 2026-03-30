@@ -171,9 +171,10 @@ input {
 
 <script>
 // ★ テストモード（本物の土日祝と同じ挙動にする：true、本番：false）
-const FORCE_HOLIDAY_TEST = false;
+const FORCE_HOLIDAY_TEST = false;   // ← 本番にするなら必ず false
+// const FORCE_HOLIDAY_TEST = true;   // ← 土日祝テスト 
 
-// 固定値// 固定値
+// 固定値
 const SHARES = 218692;
 const COST = 51200088;
 const FEE = 250000;
@@ -226,7 +227,7 @@ function calculate(price) {
         tedori.toLocaleString() + " 円";
 }
 
-// 表示ロジック（★あなたのHTML構造に完全対応）
+// 表示ロジック
 function updatePrice(price, diff, timeStr) {
     let diffText = "";
     let color = "black";
@@ -243,12 +244,12 @@ function updatePrice(price, diff, timeStr) {
 
     const priceEl = document.querySelector("#price .value");
 
-    // ★ 1行目（株価＋前日比）
+    // 1行目
     let html =
         `${price.toLocaleString()} 円 ` +
         `<span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
-    // ★ 2行目（更新時刻）
+    // 2行目
     html += `<br><span class="diff" style="color:gray; display:block; text-align:right;">(更新 ${timeStr})</span>`;
 
     priceEl.innerHTML = html;
@@ -257,28 +258,25 @@ function updatePrice(price, diff, timeStr) {
     calculate(price);
 }
 
-// 株価取得（本命：Flask → ダメならYahoo直）
+// 株価取得
 async function fetchPrice() {
     try {
+        // ① Flask API
         const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
 
         if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
 
-        // ★ テストモードなら強制的に土日祝扱い
         if (FORCE_HOLIDAY_TEST) {
-            updatePrice(
-                data.prevClose,   // 前日終値
-                0,                // diff = 0
-                "15:30:00"        // 固定
-            );
+            // ★ Flask には prevClose が無い → price を使う
+            updatePrice(data.price, 0, "15:30:00");
         } else {
             updatePrice(data.price, Math.round(data.diff), data.time);
         }
 
     } catch (e) {
-        // フォールバック（Yahoo API）
+        // ② Yahoo fallback
         try {
             const res = await fetch(
                 "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
@@ -287,12 +285,10 @@ async function fetchPrice() {
             const data = await res.json();
             const meta = data.chart.result[0].meta;
 
-            // ★ 本当の前日終値
-            const prevClose = data.chart.result[0].meta.chartPreviousClose;
+            const prevClose = meta.chartPreviousClose;  // ← 毎日変わる本物の前日終値
             const price = meta.regularMarketPrice;
             const diff = Math.round(price - prevClose);
 
-            // ★ テストモードなら強制的に土日祝扱い
             if (FORCE_HOLIDAY_TEST) {
                 updatePrice(prevClose, 0, "15:30:00");
             } else {
@@ -312,7 +308,6 @@ fetchPrice();
 // 30秒ごと更新
 setInterval(fetchPrice, 30000);
 </script>
-</script>
-
+    
 </body>
 </html>
