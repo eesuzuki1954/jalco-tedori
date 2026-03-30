@@ -270,7 +270,8 @@ async function fetchPrice() {
 
         if (FORCE_HOLIDAY_TEST) {
             // ★ 土日祝テストモード：
-            updatePrice(data.price, 0, "15:30:00");
+            // Flask の prevClose を「前日終値」として固定表示（前日比 0・時刻 15:30:00）
+            updatePrice(data.prevClose, 0, "15:30:00");
         } else {
             // ★ 本番モード：
             const now = new Date();
@@ -296,7 +297,6 @@ async function fetchPrice() {
             const data = await res.json();
             const result = data.chart.result[0];
 
-            // 前日終値（Yahoo の当日混入を避ける安全版）
             const closes = result.indicators.quote[0].close;
             const timestamps = result.timestamp;
 
