@@ -246,9 +246,7 @@ async function fetchPrice() {
 
 function updatePrice(price, diff, timeStr) {
     const priceEl = document.querySelector("#price .value");
-    const timeEl  = document.querySelector("p.time");
 
-    // ★ 前日比テキスト
     let diffText;
     if (diff === 0) {
         diffText = "－円";
@@ -258,11 +256,8 @@ function updatePrice(price, diff, timeStr) {
         diffText = `▲${Math.abs(diff)}円`;
     }
 
-    // ★ 1行目（株価＋前日比）
-    priceEl.textContent = `${price} 円（前日比${diffText}）`;
-
-    // ★ 2行目（更新時刻）
-    timeEl.textContent = `(更新 ${timeStr})`;
+    // ★ HTML は 1 行しかない → ここに全部まとめるのが正解
+    priceEl.textContent = `${price} 円（前日比${diffText}） (更新 ${timeStr})`;
 }
 
 // ★ 初回実行
