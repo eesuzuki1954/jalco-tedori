@@ -170,164 +170,137 @@ input {
 </div>
 
 <script>
-const FORCE_HOLIDAY_TEST = true;    // ← 土日祝のテストをしたい時だけ true にする
+// ★ テストモード（本物の土日祝と同じ挙動にする）
+const FORCE_HOLIDAY_TEST = true;
 
-// 固定値
-const SHARES = 218692;
-const COST = 51200088;
-const FEE = 250000;
-const TAX_RATE = 0.20315;
-
-// ▼ 日付に応じた借入残高の初期値
-function getInitialLoan() {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = today.getMonth() + 1;
-    const d = today.getDate();
-    const dateNum = y * 10000 + m * 100 + d;
-
-    if (dateNum <= 20260601) return 48400000;
-    if (dateNum <= 20270601) return 45800000;
-    if (dateNum <= 20280601) return 43200000;
-    return 40000000;
-}
-
-// 初期値セット
-const loanInput = document.getElementById("loan");
-loanInput.value = getInitialLoan().toLocaleString();
-
-// 3桁区切り入力
-loanInput.addEventListener("input", () => {
-    let raw = loanInput.value.replace(/,/g, "");
-    raw = raw.replace(/\D/g, "");
-    loanInput.value = Number(raw).toLocaleString();
-    if (window.latestPrice) calculate(window.latestPrice);
-});
-
-// 計算式
-function calculate(price) {
-    const loan = Number(loanInput.value.replace(/,/g, ""));
-    const sellAmount = price * SHARES;
-    const profit = sellAmount - COST - FEE;
-    const tax = Math.max(profit, 0) * TAX_RATE;
-    const tedori = Math.round(sellAmount - FEE - tax - loan);
-
-    document.querySelector("#sellAmount .value").textContent =
-        sellAmount.toLocaleString() + " 円";
-
-    document.querySelector("#profit .value").textContent =
-        profit.toLocaleString() + " 円";
-
-    document.querySelector("#tax .value").textContent =
-        Math.round(tax).toLocaleString() + " 円";
-
-    document.querySelector("#tedori .value").textContent =
-        tedori.toLocaleString() + " 円";
-}
-
-// ★★★★★ 土日祝判定（最小追加）★★★★★
+// ★ 東証の土日祝判定（最低限：土日だけ）
 function isMarketHoliday(date) {
     const day = date.getDay();
-    if (day === 0 || day === 6) return true;  // 土日
-
-    const m = date.getMonth() + 1;
-    const d = date.getDate();
-    const md = `${m}/${d}`;
-
-    const holidays = [
-        "1/1","2/11","2/23","4/29",
-        "5/3","5/4","5/5",
-        "11/3","11/23"
-    ];
-
-    return holidays.includes(md);
+    if (day === 0 || day === 6) return true; // 日曜・土曜
+    return false; // 祝日は必要なら追加
 }
 
-// ★★★★★ 前週レイアウト完全復元＋土日祝対応 updatePrice ★★★★★
-function updatePrice(price, diff) {
-    let diffText = "";
-    let color = "black";
+// ★ 手取り計算（A/B/C/D 全部更新）
+function recalc(price) {
+    const kabu = 218692; // 株数固定
+    const fee = 250000;  // B 約定手数料
+    const cost = 51200088; // 取得原価
 
-    if (diff > 0) {
-        diffText = `＋${diff.toLocaleString()}円`;
-        color = "blue";
-    } else if (diff < 0) {
-        diffText = `▲${Math.abs(diff).toLocaleString()}円`;
-        color = "red";
-    } else {
-        diffText = "－円";
-    }
+    const loan = Number(document.getElementById("loan").value || 0);
 
-    const priceEl = document.querySelector("#price .value");
+    // A 売却代金
+    const sell = price * kabu;
+    document.querySelector("#sellAmount .value").textContent = sell.toLocaleString() + " 円";
 
-    // ★ 更新時刻ロジック（ここに土日祝対応）
-    const now = new Date();
-    let timeStr;
+    // 売却益
+    const profit = sell - cost - fee;
+    document.querySelector("#profit .value").textContent = profit.toLocaleString() + " 円";
 
-    if (FORCE_HOLIDAY_TEST || isMarketHoliday(now)) {
-        timeStr = "15:30:00";
-    } else {
-        const endHour = 15;
-        const endMinute = 30;
-        const startHour = 9;
+    // C 税金（約20%）
+    const tax = Math.floor(profit * 0.2);
+    document.querySelector("#tax .value").textContent = tax.toLocaleString() + " 円";
 
-        if (
-            (now.getHours() > endHour) ||
-            (now.getHours() === endHour && now.getMinutes() >= endMinute) ||
-            (now.getHours() < startHour)
-        ) {
-            timeStr = "15:30:00";
-        } else {
-            timeStr = now.toLocaleTimeString();
-        }
-    }
-
-    // ★ レイアウトは前週のまま（広い1エリアで2行構成）
-    priceEl.innerHTML =
-        `${price.toLocaleString()} 円` +
-        ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>` +
-        `<br><span class="diff" style="color:gray; display:block; text-align:right;">(更新 ${timeStr})</span>`;
-
-    window.latestPrice = price;
-    calculate(price);
+    // 手取り
+    const tedori = sell - fee - tax - loan;
+    document.querySelector("#tedori .value").textContent = tedori.toLocaleString() + " 円";
 }
 
-// 株価取得（本命：Flask → ダメならYahoo直）
 async function fetchPrice() {
+    const now = new Date();
+
     try {
-        const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
-
-        if (!res.ok) throw new Error("Flask NG");
-
+        // ★ Yahoo API（6625.T）
+        const res = await fetch(
+            "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
+        );
         const data = await res.json();
+        const meta = data.chart.result[0].meta;
 
-        updatePrice(data.price, Math.round(data.diff));
+        const marketPrice = meta.regularMarketPrice; // 現在値（平日）
+        const prevClose   = meta.previousClose;      // 直近の営業日の終値
+
+        // ★ 土日祝 or テストモード → 本物の土日祝と同じ挙動
+        const isHolidayLike = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
+
+        let price, diff;
+
+        if (isHolidayLike) {
+            // ★ 土日祝モード（＋テスト）
+            price = prevClose;  // 前営業日の終値
+            diff  = 0;          // 前日比なし
+        } else {
+            // ★ 平日モード
+            price = marketPrice;
+            diff  = Math.round(marketPrice - prevClose);
+        }
+
+        updatePrice(price, diff, isHolidayLike, now);
+
+        // ★ 株価が決まったら A/B/C/D/手取りを再計算
+        recalc(price);
 
     } catch (e) {
-        try {
-            const res = await fetch(
-                "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
-            );
-
-            const data = await res.json();
-            const result = data.chart.result[0].meta;
-
-            const price = result.regularMarketPrice;
-            const diff = Math.round(price - result.previousClose);
-
-            updatePrice(price, diff);
-
-        } catch (e2) {
-            document.querySelector("#price .value").textContent = "取得失敗";
-        }
+        document.querySelector("#price .value").textContent = "取得失敗";
     }
 }
 
-// 初回実行
+function updatePrice(price, diff, isHolidayLike, now) {
+    const priceEl = document.querySelector("#price .value");
+
+    // ★ 前日比表示用の要素が HTML に無いので追加
+    let diffEl = document.querySelector("#price .diff");
+    if (!diffEl) {
+        diffEl = document.createElement("span");
+        diffEl.className = "diff";
+        document.querySelector("#price").appendChild(diffEl);
+    }
+
+    // ★ 更新時刻表示用の要素も HTML に無いので追加
+    let timeEl = document.querySelector("#price .time");
+    if (!timeEl) {
+        timeEl = document.createElement("span");
+        timeEl.className = "time";
+        document.querySelector("#price").appendChild(timeEl);
+    }
+
+    // ★ 株価
+    priceEl.textContent = `${price} 円`;
+
+    // ★ 前日比
+    if (diff === 0) {
+        diffEl.textContent = "（前日比 －円）";
+    } else if (diff > 0) {
+        diffEl.textContent = `（前日比＋${diff}円）`;
+    } else {
+        diffEl.textContent = `（前日比▲${Math.abs(diff)}円）`;
+    }
+
+    // ★ 時刻：土日祝（＋テスト）は 15:30:00 固定
+    let timeStr;
+    if (isHolidayLike) {
+        timeStr = "15:30:00";
+    } else {
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        const ss = String(now.getSeconds()).padStart(2, "0");
+        timeStr = `${hh}:${mm}:${ss}`;
+    }
+
+    timeEl.textContent = `(更新 ${timeStr})`;
+}
+
+// ★ 初回実行
 fetchPrice();
 
-// 30秒ごと更新
+// ★ あなたの指定どおり「30秒ごと更新」
 setInterval(fetchPrice, 30000);
+
+// ★ D（借入残高）入力時も手取り再計算
+document.getElementById("loan").addEventListener("input", () => {
+    const priceText = document.querySelector("#price .value").textContent;
+    const price = Number(priceText.replace(" 円", ""));
+    if (!isNaN(price)) recalc(price);
+});
 </script>
 
 </body>
