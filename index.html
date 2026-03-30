@@ -269,10 +269,9 @@ async function fetchPrice() {
         const data = await res.json();
 
         if (FORCE_HOLIDAY_TEST) {
-            // Flask には prevClose が無い → price を使う
+            // Flask には前日終値が無い → price を前日終値扱い
             updatePrice(data.price, 0, "15:30:00");
         } else {
-            // ★ 本番モード：Flask は time を返さない → JS で生成
             const now = new Date();
             updatePrice(data.price, Math.round(data.diff), now.toLocaleTimeString());
         }
@@ -285,10 +284,13 @@ async function fetchPrice() {
             );
 
             const data = await res.json();
-            const meta = data.chart.result[0].meta;
+            const result = data.chart.result[0];
 
-            const prevClose = meta.chartPreviousClose;
-            const price = meta.regularMarketPrice;
+            // ★ 本物の前日終値（chartPreviousClose は使わない）
+            const closes = result.indicators.quote[0].close;
+            const prevClose = closes[closes.length - 1];
+
+            const price = result.meta.regularMarketPrice;
             const diff = Math.round(price - prevClose);
 
             if (FORCE_HOLIDAY_TEST) {
