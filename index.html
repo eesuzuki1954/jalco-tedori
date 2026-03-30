@@ -171,6 +171,7 @@ input {
 
 <script>
 // ★ テストモード（本物の土日祝と同じ挙動にする：true）
+// ★ テストモード（本物の土日祝と同じ挙動にする）
 const FORCE_HOLIDAY_TEST = true;
 
 // ★ 東証の土日祝判定（最低限：土日だけ）
@@ -188,16 +189,20 @@ function recalc(price) {
     const loan = Number(document.getElementById("loan").value || 0);
 
     const sell = price * kabu;
-    document.querySelector("#sellAmount .value").textContent = sell.toLocaleString() + " 円";
+    document.querySelector("#sellAmount .value").textContent =
+        sell.toLocaleString() + " 円";
 
     const profit = sell - cost - fee;
-    document.querySelector("#profit .value").textContent = profit.toLocaleString() + " 円";
+    document.querySelector("#profit .value").textContent =
+        profit.toLocaleString() + " 円";
 
     const tax = Math.floor(profit * 0.2);
-    document.querySelector("#tax .value").textContent = tax.toLocaleString() + " 円";
+    document.querySelector("#tax .value").textContent =
+        tax.toLocaleString() + " 円";
 
     const tedori = sell - fee - tax - loan;
-    document.querySelector("#tedori .value").textContent = tedori.toLocaleString() + " 円";
+    document.querySelector("#tedori .value").textContent =
+        tedori.toLocaleString() + " 円";
 }
 
 async function fetchPrice() {
@@ -215,17 +220,23 @@ async function fetchPrice() {
 
         const isHolidayLike = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
-        let price, diff;
+        let price, diff, timeStr;
 
         if (isHolidayLike) {
-            price = prevClose;
-            diff = 0;
+            price   = prevClose;
+            diff    = 0;
+            timeStr = "15:30:00";
         } else {
-            price = marketPrice;
-            diff = Math.round(marketPrice - prevClose);
+            price   = marketPrice;
+            diff    = Math.round(marketPrice - prevClose);
+
+            const hh = String(now.getHours()).padStart(2, "0");
+            const mm = String(now.getMinutes()).padStart(2, "0");
+            const ss = String(now.getSeconds()).padStart(2, "0");
+            timeStr  = `${hh}:${mm}:${ss}`;
         }
 
-        updatePrice(price, diff, isHolidayLike, now);
+        updatePrice(price, diff, timeStr);
         recalc(price);
 
     } catch (e) {
@@ -233,34 +244,24 @@ async function fetchPrice() {
     }
 }
 
-function updatePrice(price, diff, isHolidayLike, now) {
+function updatePrice(price, diff, timeStr) {
     const priceEl = document.querySelector("#price .value");
-    const diffEl  = document.querySelector("#price .diff");
     const timeEl  = document.querySelector("p.time");
 
-    // ★ 株価
-    priceEl.textContent = `${price} 円`;
-
-    // ★ 前日比
+    // ★ 前日比テキスト
+    let diffText;
     if (diff === 0) {
-        diffEl.textContent = `（前日比－円）`;
+        diffText = "－円";
     } else if (diff > 0) {
-        diffEl.textContent = `（前日比＋${diff}円）`;
+        diffText = `＋${diff}円`;
     } else {
-        diffEl.textContent = `（前日比▲${Math.abs(diff)}円）`;
+        diffText = `▲${Math.abs(diff)}円`;
     }
 
-    // ★ 時刻
-    let timeStr;
-    if (isHolidayLike) {
-        timeStr = "15:30:00";
-    } else {
-        const hh = String(now.getHours()).padStart(2, "0");
-        const mm = String(now.getMinutes()).padStart(2, "0");
-        const ss = String(now.getSeconds()).padStart(2, "0");
-        timeStr = `${hh}:${mm}:${ss}`;
-    }
+    // ★ 1行目（株価＋前日比）
+    priceEl.textContent = `${price} 円（前日比${diffText}）`;
 
+    // ★ 2行目（更新時刻）
     timeEl.textContent = `(更新 ${timeStr})`;
 }
 
@@ -273,7 +274,9 @@ setInterval(fetchPrice, 30000);
 // ★ 借入残高入力時も再計算
 document.getElementById("loan").addEventListener("input", () => {
     const priceText = document.querySelector("#price .value").textContent;
-    const price = Number(priceText.replace(" 円", ""));
+    const m = priceText.match(/^(\d+)\s*円/);
+    if (!m) return;
+    const price = Number(m[1]);
     if (!isNaN(price)) recalc(price);
 });
 </script>
