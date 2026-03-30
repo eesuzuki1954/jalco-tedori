@@ -270,11 +270,9 @@ async function fetchPrice() {
 
         if (FORCE_HOLIDAY_TEST) {
             // ★ 土日祝テストモード：
-            // Flask の price を「前日終値」として固定表示（前日比 0・時刻 15:30:00）
             updatePrice(data.price, 0, "15:30:00");
         } else {
             // ★ 本番モード：
-            // Flask の値をそのまま使用（time は Flask が返さない前提なので JS 側で生成）
             const now = new Date();
             updatePrice(data.price, Math.round(data.diff), now.toLocaleTimeString());
         }
@@ -282,7 +280,7 @@ async function fetchPrice() {
     } catch (e) {
         // ② Flask 失敗時
 
-        // ★ 土日祝テストモードでは Yahoo fallback を絶対に使わない
+        // ★ 土日祝テストモードでは Yahoo fallback を完全封印
         if (FORCE_HOLIDAY_TEST) {
             document.querySelector("#price .value").textContent =
                 "取得失敗（テスト）";
@@ -298,13 +296,12 @@ async function fetchPrice() {
             const data = await res.json();
             const result = data.chart.result[0];
 
-            // 本物の前日終値をできるだけ安全に取得
+            // 前日終値（Yahoo の当日混入を避ける安全版）
             const closes = result.indicators.quote[0].close;
             const timestamps = result.timestamp;
 
-            // 当日分を除外して前日終値を推定
             const lastDate = new Date(timestamps[timestamps.length - 1] * 1000).getDate();
-            let prevClose = null;
+            let prevClose = closes[closes.length - 1];
 
             for (let i = closes.length - 1; i >= 0; i--) {
                 const d = new Date(timestamps[i] * 1000).getDate();
