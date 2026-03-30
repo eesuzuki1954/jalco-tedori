@@ -170,6 +170,8 @@ input {
 </div>
 
 <script>
+const FORCE_HOLIDAY_TEST = true;      # false;   // ← 土日祝のテストをしたい時だけ true にするconst FORCE_HOLIDAY_TEST = true;      # false;   // ← 土日祝のテストをしたい時だけ true にする
+
 // 固定値
 const SHARES = 218692;
 const COST = 51200088;
@@ -262,7 +264,7 @@ function updatePrice(price, diff) {
     const now = new Date();
     let timeStr;
 
-    if (isMarketHoliday(now)) {
+    if (FORCE_HOLIDAY_TEST || isMarketHoliday(now)) {
         timeStr = "15:30:00";
     } else {
         const endHour = 15;
