@@ -261,7 +261,7 @@ function updatePrice(price, diff, timeStr) {
 // 株価取得
 async function fetchPrice() {
     try {
-        // ① Flask API
+        // ① Flask API（本命）
         const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
 
         if (!res.ok) throw new Error("Flask NG");
@@ -269,15 +269,27 @@ async function fetchPrice() {
         const data = await res.json();
 
         if (FORCE_HOLIDAY_TEST) {
-            // Flask には前日終値が無い → price を前日終値扱い
+            // ★ 土日祝テストモード：
+            // Flask の price を「前日終値」として固定表示（前日比 0・時刻 15:30:00）
             updatePrice(data.price, 0, "15:30:00");
         } else {
+            // ★ 本番モード：
+            // Flask の値をそのまま使用（time は Flask が返さない前提なので JS 側で生成）
             const now = new Date();
             updatePrice(data.price, Math.round(data.diff), now.toLocaleTimeString());
         }
 
     } catch (e) {
-        // ② Yahoo fallback
+        // ② Flask 失敗時
+
+        // ★ 土日祝テストモードでは Yahoo fallback を絶対に使わない
+        if (FORCE_HOLIDAY_TEST) {
+            document.querySelector("#price .value").textContent =
+                "取得失敗（テスト）";
+            return;
+        }
+
+        // ★ 本番モードのみ Yahoo fallback を使用
         try {
             const res = await fetch(
                 "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
@@ -286,19 +298,27 @@ async function fetchPrice() {
             const data = await res.json();
             const result = data.chart.result[0];
 
-            // ★ 本物の前日終値（chartPreviousClose は使わない）
+            // 本物の前日終値をできるだけ安全に取得
             const closes = result.indicators.quote[0].close;
-            const prevClose = closes[closes.length - 1];
+            const timestamps = result.timestamp;
+
+            // 当日分を除外して前日終値を推定
+            const lastDate = new Date(timestamps[timestamps.length - 1] * 1000).getDate();
+            let prevClose = null;
+
+            for (let i = closes.length - 1; i >= 0; i--) {
+                const d = new Date(timestamps[i] * 1000).getDate();
+                if (d !== lastDate) {
+                    prevClose = closes[i];
+                    break;
+                }
+            }
 
             const price = result.meta.regularMarketPrice;
             const diff = Math.round(price - prevClose);
 
-            if (FORCE_HOLIDAY_TEST) {
-                updatePrice(prevClose, 0, "15:30:00");
-            } else {
-                const now = new Date();
-                updatePrice(price, diff, now.toLocaleTimeString());
-            }
+            const now = new Date();
+            updatePrice(price, diff, now.toLocaleTimeString());
 
         } catch (e2) {
             document.querySelector("#price .value").textContent = "取得失敗";
