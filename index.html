@@ -236,7 +236,7 @@ async function fetchPrice() {
 function updatePrice(price, diff, isHolidayLike, now) {
     const priceEl = document.querySelector("#price .value");
     const diffEl  = document.querySelector("#price .diff");
-    const timeEl  = document.querySelector(".time");
+    const timeEl  = document.querySelector("p.time");
 
     // ★ 株価
     priceEl.textContent = `${price} 円`;
