@@ -100,9 +100,9 @@ input {
     margin-right: 6px;
     font-size: 18px;
 }
-    
+
 .diff {
-    font-size: 16px;   /* ←ここで調整 */
+    font-size: 16px;
     font-weight: normal;
 }
 </style>
@@ -169,9 +169,9 @@ input {
     </p>
 </div>
 
-<script
-// ★ テスト用フラグ（平日でも土日祝扱いにするテストは：「true」にする）
-const FORCE_HOLIDAY_TEST = true;   # false;
+<script>
+// ★ テスト用フラグ（平日でも土日祝扱いにするテストは true に）
+const FORCE_HOLIDAY_TEST = true;
 
 // 固定値
 const SHARES = 218692;
@@ -213,9 +213,6 @@ function calculate(price) {
     const tax = Math.max(profit, 0) * TAX_RATE;
     const tedori = Math.round(sellAmount - FEE - tax - loan);
 
-    // document.querySelector("#price .value").textContent =
-    //     price.toLocaleString() + " 円";
-
     document.querySelector("#sellAmount .value").textContent =
         sellAmount.toLocaleString() + " 円";
 
@@ -230,26 +227,24 @@ function calculate(price) {
 }
 
 // 日本の祝日判定（最小版）
-// ※ 厳密な祝日APIを使わず、土日＋固定祝日だけを扱う簡易版
 function isMarketHoliday(date) {
     const day = date.getDay();
     if (day === 0 || day === 6) return true; // 日曜=0, 土曜=6
 
-    // 固定祝日（必要に応じて追加）
     const y = date.getFullYear();
     const m = date.getMonth() + 1;
     const d = date.getDate();
 
     const fixedHolidays = [
-        `${y}-1-1`,   // 元日
-        `${y}-2-11`,  // 建国記念の日
-        `${y}-2-23`,  // 天皇誕生日
-        `${y}-4-29`,  // 昭和の日
-        `${y}-5-3`,   // 憲法記念日
-        `${y}-5-4`,   // みどりの日
-        `${y}-5-5`,   // こどもの日
-        `${y}-11-3`,  // 文化の日
-        `${y}-11-23`, // 勤労感謝の日
+        `${y}-1-1`,
+        `${y}-2-11`,
+        `${y}-2-23`,
+        `${y}-4-29`,
+        `${y}-5-3`,
+        `${y}-5-4`,
+        `${y}-5-5`,
+        `${y}-11-3`,
+        `${y}-11-23`,
     ];
 
     return fixedHolidays.includes(`${y}-${m}-${d}`);
@@ -276,16 +271,13 @@ function updatePrice(price, diff) {
         `${price.toLocaleString()} 円` +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
-    // ★ ここ追加（更新時刻表示）
     const now = new Date();
     let timeStr;
 
-    // 東証の取引時間
     const endHour = 15;
     const endMinute = 30;
     const startHour = 9;
 
-    // ★ 土日祝判定（テストモード対応）
     const isHoliday = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
     if (isHoliday) {
@@ -307,30 +299,30 @@ function updatePrice(price, diff) {
     calculate(price);
 }
 
-
 // 株価取得（本命：Flask → ダメならYahoo直）
 async function fetchPrice() {
-    // ★ 土日祝テスト中は Flask を呼ばない（これが必須）
+    // 土日祝テスト中は Flask を呼ばない
     if (FORCE_HOLIDAY_TEST) {
-        updatePrice(window.latestPrice ?? 0, 0);
+        updatePrice(window.latestPrice ?? 365, 0);
         return;
     }
-    
+
     try {
         console.log("① Flask API呼び出し");
 
         const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
-
         if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
+
+        // Flask が error を返した場合は Yahoo へフォールバック
+        if (data.error) throw new Error("Flask returned error");
 
         updatePrice(data.price, Math.round(data.diff));
 
     } catch (e) {
         console.log("② Flask失敗 → 直接Yahooへ", e);
 
-        // フォールバック（Yahoo API）
         try {
             const res = await fetch(
                 "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
@@ -350,9 +342,6 @@ async function fetchPrice() {
         }
     }
 }
-
-// ★★★ ここに置く（fetchPrice より前） ★★★
-const FORCE_HOLIDAY_TEST = true;
 
 // 初回実行
 fetchPrice();
