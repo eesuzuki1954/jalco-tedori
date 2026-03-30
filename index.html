@@ -228,7 +228,7 @@ async function fetchPrice() {
         if (data.error) throw new Error("Flask returned error");
 
         const price = data.price;      // 当日値
-        const prev  = data.prev_close; // 前日終値
+        const prev = data.prevClose;  // 前日終値
 
         applyDisplayLogic(price, prev);
         return;
