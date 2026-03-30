@@ -207,7 +207,7 @@ loanInput.addEventListener("input", () => {
 
 // 計算式
 function calculate(price) {
-    const loan = Number(loanInput.value.replace(/,/g, ""));
+    const loan = Number(loanInput.value.replace(/,/g, "");
     const sellAmount = price * SHARES;
     const profit = sellAmount - COST - FEE;
     const tax = Math.max(profit, 0) * TAX_RATE;
