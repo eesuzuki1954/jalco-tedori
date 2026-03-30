@@ -274,7 +274,7 @@ function updatePrice(price, diff) {
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
     // ★ テスト用フラグ（平日でも土日祝扱いにするテストは：「true」にする）
-    const FORCE_HOLIDAY_TEST = false;
+    const FORCE_HOLIDAY_TEST = true;   # false;
 
     // ★ ここ追加（更新時刻表示）
     const now = new Date();
