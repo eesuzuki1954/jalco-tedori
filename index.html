@@ -1,107 +1,331 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JHD株式 手取り計算</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-            margin: 20px;
-            font-size: 18px;
-        }
-        .container {
-            max-width: 400px;
-            margin: auto;
-        }
-        .row {
-            margin-bottom: 10px;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            font-size: 18px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>JALCO株式 手取り計算</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 20px;
+    background: #f2f2f7;
+}
+
+/* カード全体をiOS風に */
+.box {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e5e5ea;
+}
+
+/* 行を左右2カラムにする */
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 左側（ラベル） */
+.label {
+    font-size: 25px;
+    display: flex;
+    align-items: center;
+}
+
+/* 右側（金額） */
+.value {
+    font-size: 25px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 区切り線 */
+.item {
+    margin-top: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e5ea;
+}
+
+/* D 借入残高（円） */
+.loan-label {
+    font-size: 26px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 22px;
+    display: block;
+}
+
+/* 入力欄 */
+input {
+    width: 100%;
+    padding: 12px;
+    font-size: 26px;
+    margin-top: 6px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+}
+
+/* 手取り（黄色カード） */
+.result {
+    font-size: 27px;
+    font-weight: 700;
+    margin-top: 22px;
+    margin-bottom: 4px;
+    color: #333;
+    background: #fff9d6;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #f0e6a8;
+}
+
+/* 計算式 */
+.formula {
+    font-size: 18px;
+    margin-top: 0px;
+    color: #666;
+}
+
+/* A/B/C/D バッジ */
+.badge {
+    display: inline-block;
+    background: #007aff;
+    color: white;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-right: 6px;
+    font-size: 18px;
+}
+
+.diff {
+    font-size: 16px;
+    font-weight: normal;
+}
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <h2>JHD株式 手取り計算</h2>
+<div class="box">
+    <h2>JHD株式 手取り計算</h2>
 
-        <div id="price" class="row"></div>
-        <div id="diff" class="row"></div>
-        <div id="time" class="row"></div>
+    <!-- 株価 -->
+    <p class="item row" id="price">
+        <span class="label">株価：</span>
+        <span class="value">取得中…</span>
+    </p>
 
-        <div class="row">
-            株数：<span id="shares">218,692</span>株
-        </div>
+    <!-- 株数 -->
+    <p class="item row">
+        <span class="label">株数：</span>
+        <span class="value">218,692 株</span>
+    </p>
 
-        <div class="row">
-            借入残高（D）：<input type="number" id="loan" value="0">
-        </div>
+    <!-- A 売却代金 -->
+    <p class="item row" id="sellAmount">
+        <span class="label"><span class="badge">A</span> 売却代金：</span>
+        <span class="value">- 円</span>
+    </p>
 
-        <div class="row">
-            手取り：<span id="net">0</span>円
-        </div>
-    </div>
+    <!-- 取得原価 -->
+    <p class="item row">
+        <span class="label">取得原価：</span>
+        <span class="value">51,200,088 円</span>
+    </p>
+
+    <!-- B 約定手数料 -->
+    <p class="item row">
+        <span class="label"><span class="badge">B</span> 約定手数料：</span>
+        <span class="value">250,000 円</span>
+    </p>
+
+    <!-- 売却益 -->
+    <p class="item row" id="profit">
+        <span class="label">売却益（課税対象）：</span>
+        <span class="value">- 円</span>
+    </p>
+
+    <!-- C 税金 -->
+    <p class="item row" id="tax">
+        <span class="label"><span class="badge">C</span> 税金（約20%）：</span>
+        <span class="value">- 円</span>
+    </p>
+
+    <!-- D 借入残高 -->
+    <label class="loan-label"><span class="badge">D</span> 借入残高（円）</label>
+    <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
+
+    <!-- 手取り -->
+    <p class="result row" id="tedori">
+        <span class="label">手取り：</span>
+        <span class="value">計算中…</span>
+    </p>
+
+    <p class="formula">
+        計算式 = <span class="badge">A</span> − <span class="badge">B</span> − <span class="badge">C</span> − <span class="badge">D</span>
+    </p>
+</div>
 
 <script>
-const STOCK_API = "/stock";
-let latestPrice = null;
+// 固定値
+const SHARES = 218692;
+const COST = 51200088;
+const FEE = 250000;
+const TAX_RATE = 0.20315;
 
+// ▼ 日付に応じた借入残高の初期値
+function getInitialLoan() {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = today.getMonth() + 1;
+    const d = today.getDate();
+    const dateNum = y * 10000 + m * 100 + d;
+
+    if (dateNum <= 20260601) return 48400000;
+    if (dateNum <= 20270601) return 45800000;
+    if (dateNum <= 20280601) return 43200000;
+    return 40000000;
+}
+
+// 初期値セット
+const loanInput = document.getElementById("loan");
+loanInput.value = getInitialLoan().toLocaleString();
+
+// 3桁区切り入力
+loanInput.addEventListener("input", () => {
+    let raw = loanInput.value.replace(/,/g, "");
+    raw = raw.replace(/\D/g, "");
+    loanInput.value = Number(raw).toLocaleString();
+    if (window.latestPrice) calculate(window.latestPrice);
+});
+
+// 計算式
+function calculate(price) {
+    const loan = Number(loanInput.value.replace(/,/g, ""));
+    const sellAmount = price * SHARES;
+    const profit = sellAmount - COST - FEE;
+    const tax = Math.max(profit, 0) * TAX_RATE;
+    const tedori = Math.round(sellAmount - FEE - tax - loan);
+
+    document.querySelector("#sellAmount .value").textContent =
+        sellAmount.toLocaleString() + " 円";
+
+    document.querySelector("#profit .value").textContent =
+        profit.toLocaleString() + " 円";
+
+    document.querySelector("#tax .value").textContent =
+        Math.round(tax).toLocaleString() + " 円";
+
+    document.querySelector("#tedori .value").textContent =
+        tedori.toLocaleString() + " 円";
+}
+
+// ★★★★★ 土日祝判定（最小追加）★★★★★
+function isMarketHoliday(date) {
+    const day = date.getDay();
+    if (day === 0 || day === 6) return true;  // 土日
+
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const md = `${m}/${d}`;
+
+    const holidays = [
+        "1/1","2/11","2/23","4/29",
+        "5/3","5/4","5/5",
+        "11/3","11/23"
+    ];
+
+    return holidays.includes(md);
+}
+
+// ★★★★★ 前週レイアウト完全復元＋土日祝対応 updatePrice ★★★★★
+function updatePrice(price, diff) {
+    let diffText = "";
+    let color = "black";
+
+    if (diff > 0) {
+        diffText = `＋${diff.toLocaleString()}円`;
+        color = "blue";
+    } else if (diff < 0) {
+        diffText = `▲${Math.abs(diff).toLocaleString()}円`;
+        color = "red";
+    } else {
+        diffText = "－円";
+    }
+
+    const priceEl = document.querySelector("#price .value");
+
+    // ★ 更新時刻ロジック（ここに土日祝対応）
+    const now = new Date();
+    let timeStr;
+
+    if (isMarketHoliday(now)) {
+        timeStr = "15:30:00";
+    } else {
+        const endHour = 15;
+        const endMinute = 30;
+        const startHour = 9;
+
+        if (
+            (now.getHours() > endHour) ||
+            (now.getHours() === endHour && now.getMinutes() >= endMinute) ||
+            (now.getHours() < startHour)
+        ) {
+            timeStr = "15:30:00";
+        } else {
+            timeStr = now.toLocaleTimeString();
+        }
+    }
+
+    // ★ レイアウトは前週のまま（広い1エリアで2行構成）
+    priceEl.innerHTML =
+        `${price.toLocaleString()} 円` +
+        ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>` +
+        `<br><span class="diff" style="color:gray; display:block; text-align:right;">(更新 ${timeStr})</span>`;
+
+    window.latestPrice = price;
+    calculate(price);
+}
+
+// 株価取得（本命：Flask → ダメならYahoo直）
 async function fetchPrice() {
     try {
-        const res = await fetch(STOCK_API);
+        const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
+
         if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
-        if (data.error) throw new Error("Flask returned error");
 
-        const price = data.price;
-        const prev  = data.prevClose;   // ← ★ここだけ修正済み
-
-        applyDisplayLogic(price, prev);
-        return;
+        updatePrice(data.price, Math.round(data.diff));
 
     } catch (e) {
-        console.log("Flask失敗 → Yahooへ", e);
+        try {
+            const res = await fetch(
+                "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
+            );
+
+            const data = await res.json();
+            const result = data.chart.result[0].meta;
+
+            const price = result.regularMarketPrice;
+            const diff = Math.round(price - result.previousClose);
+
+            updatePrice(price, diff);
+
+        } catch (e2) {
+            document.querySelector("#price .value").textContent = "取得失敗";
+        }
     }
 }
 
-function applyDisplayLogic(price, prevClose) {
-    const diff = price - prevClose;
-    const time = "15:30:00";  // 固定表示（あなたの画像通り）
-
-    updatePrice(price, diff, time);
-    latestPrice = price;
-    calculate();
-}
-
-function updatePrice(price, diff, time) {
-    const priceEl = document.getElementById("price");
-    const diffEl  = document.getElementById("diff");
-    const timeEl  = document.getElementById("time");
-
-    // ★ あなたの元のレイアウトに完全一致させる
-    priceEl.textContent = `株価：${price}円（前日比${diff}円）`;
-    diffEl.textContent  = `（更新 ${time}）`;
-    timeEl.textContent  = "";  // 3行目は使わない
-}
-
-function calculate() {
-    const shares = 218692;
-    const loan = Number(document.getElementById("loan").value || 0);
-
-    if (latestPrice === null) return;
-
-    const total = latestPrice * shares;
-    const net = total - loan;
-
-    document.getElementById("net").textContent = net.toLocaleString();
-}
-
+// 初回実行
 fetchPrice();
-setInterval(fetchPrice, 60000);
+
+// 30秒ごと更新
+setInterval(fetchPrice, 30000);
 </script>
 
 </body>
