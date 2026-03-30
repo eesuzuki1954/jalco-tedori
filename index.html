@@ -176,31 +176,26 @@ const FORCE_HOLIDAY_TEST = true;
 // ★ 東証の土日祝判定（最低限：土日だけ）
 function isMarketHoliday(date) {
     const day = date.getDay();
-    if (day === 0 || day === 6) return true; // 日曜・土曜
-    return false; // 祝日は必要なら追加
+    return day === 0 || day === 6;
 }
 
-// ★ 手取り計算（A/B/C/D 全部更新）
+// ★ 手取り計算
 function recalc(price) {
-    const kabu = 218692; // 株数固定
-    const fee = 250000;  // B 約定手数料
-    const cost = 51200088; // 取得原価
+    const kabu = 218692;
+    const fee = 250000;
+    const cost = 51200088;
 
     const loan = Number(document.getElementById("loan").value || 0);
 
-    // A 売却代金
     const sell = price * kabu;
     document.querySelector("#sellAmount .value").textContent = sell.toLocaleString() + " 円";
 
-    // 売却益
     const profit = sell - cost - fee;
     document.querySelector("#profit .value").textContent = profit.toLocaleString() + " 円";
 
-    // C 税金（約20%）
     const tax = Math.floor(profit * 0.2);
     document.querySelector("#tax .value").textContent = tax.toLocaleString() + " 円";
 
-    // 手取り
     const tedori = sell - fee - tax - loan;
     document.querySelector("#tedori .value").textContent = tedori.toLocaleString() + " 円";
 }
@@ -209,34 +204,28 @@ async function fetchPrice() {
     const now = new Date();
 
     try {
-        // ★ Yahoo API（6625.T）
         const res = await fetch(
             "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
         );
         const data = await res.json();
         const meta = data.chart.result[0].meta;
 
-        const marketPrice = meta.regularMarketPrice; // 現在値（平日）
-        const prevClose   = meta.previousClose;      // 直近の営業日の終値
+        const marketPrice = meta.regularMarketPrice;
+        const prevClose   = meta.previousClose;
 
-        // ★ 土日祝 or テストモード → 本物の土日祝と同じ挙動
         const isHolidayLike = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
         let price, diff;
 
         if (isHolidayLike) {
-            // ★ 土日祝モード（＋テスト）
-            price = prevClose;  // 前営業日の終値
-            diff  = 0;          // 前日比なし
+            price = prevClose;
+            diff = 0;
         } else {
-            // ★ 平日モード
             price = marketPrice;
-            diff  = Math.round(marketPrice - prevClose);
+            diff = Math.round(marketPrice - prevClose);
         }
 
         updatePrice(price, diff, isHolidayLike, now);
-
-        // ★ 株価が決まったら A/B/C/D/手取りを再計算
         recalc(price);
 
     } catch (e) {
@@ -246,8 +235,22 @@ async function fetchPrice() {
 
 function updatePrice(price, diff, isHolidayLike, now) {
     const priceEl = document.querySelector("#price .value");
+    const diffEl  = document.querySelector("#price .diff");
+    const timeEl  = document.querySelector(".time");
 
-    // ★ 時刻：土日祝（＋テスト）は 15:30:00 固定
+    // ★ 株価
+    priceEl.textContent = `${price} 円`;
+
+    // ★ 前日比
+    if (diff === 0) {
+        diffEl.textContent = `（前日比－円）`;
+    } else if (diff > 0) {
+        diffEl.textContent = `（前日比＋${diff}円）`;
+    } else {
+        diffEl.textContent = `（前日比▲${Math.abs(diff)}円）`;
+    }
+
+    // ★ 時刻
     let timeStr;
     if (isHolidayLike) {
         timeStr = "15:30:00";
@@ -258,27 +261,19 @@ function updatePrice(price, diff, isHolidayLike, now) {
         timeStr = `${hh}:${mm}:${ss}`;
     }
 
-    // ★ レイアウトを変えないために、value の中に全部まとめて書く
-    // （DOM を追加しない・構造を変えない）
-    if (diff === 0) {
-        priceEl.textContent = `${price} 円 （前日比 －円） (更新 ${timeStr})`;
-    } else if (diff > 0) {
-        priceEl.textContent = `${price} 円 （前日比＋${diff}円） (更新 ${timeStr})`;
-    } else {
-        priceEl.textContent = `${price} 円 （前日比▲${Math.abs(diff)}円） (更新 ${timeStr})`;
-    }
+    timeEl.textContent = `(更新 ${timeStr})`;
 }
 
 // ★ 初回実行
 fetchPrice();
 
-// ★ あなたの指定どおり「30秒ごと更新」
+// ★ 30秒ごと更新
 setInterval(fetchPrice, 30000);
 
-// ★ D（借入残高）入力時も手取り再計算
+// ★ 借入残高入力時も再計算
 document.getElementById("loan").addEventListener("input", () => {
-    const text = document.querySelector("#price .value").textContent;
-    const price = Number(text.split(" 円")[0]);
+    const priceText = document.querySelector("#price .value").textContent;
+    const price = Number(priceText.replace(" 円", ""));
     if (!isNaN(price)) recalc(price);
 });
 </script>
