@@ -252,6 +252,7 @@ function isMarketHoliday(date) {
     return fixedHolidays.includes(`${y}-${m}-${d}`);
 }
 
+// 表示ロジック
 function updatePrice(price, diff) {
     let diffText = "";
     let color = "black";
@@ -272,8 +273,8 @@ function updatePrice(price, diff) {
         `${price.toLocaleString()} 円` +
         ` <span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
-    // ★ テスト用フラグ（平日でも土日祝扱いにする）
-    const FORCE_HOLIDAY_TEST = true;
+    // ★ テスト用フラグ（平日でも土日祝扱いにするテストは：「true」にする）
+    const FORCE_HOLIDAY_TEST = false;
 
     // ★ ここ追加（更新時刻表示）
     const now = new Date();
