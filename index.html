@@ -170,10 +170,10 @@ input {
 </div>
 
 <script>
-// ★ テストモード（本物の土日祝と同じ挙動にする：true）
-const FORCE_HOLIDAY_TEST = true;
+// ★ テストモード（本物の土日祝と同じ挙動にする：true、本番：false）
+const FORCE_HOLIDAY_TEST = false;
 
-// 固定値
+// 固定値// 固定値
 const SHARES = 218692;
 const COST = 51200088;
 const FEE = 250000;
@@ -287,7 +287,7 @@ async function fetchPrice() {
             const data = await res.json();
             const meta = data.chart.result[0].meta;
 
-            // ★ 本当の前日終値（375）
+            // ★ 本当の前日終値
             const prevClose = data.chart.result[0].meta.chartPreviousClose;
             const price = meta.regularMarketPrice;
             const diff = Math.round(price - prevClose);
