@@ -174,35 +174,9 @@ input {
 // ★ テストモード（本物の土日祝と同じ挙動にする）
 const FORCE_HOLIDAY_TEST = true;
 
-// ★ 東証の土日祝判定（最低限：土日だけ）
 function isMarketHoliday(date) {
     const day = date.getDay();
     return day === 0 || day === 6;
-}
-
-// ★ 手取り計算
-function recalc(price) {
-    const kabu = 218692;
-    const fee = 250000;
-    const cost = 51200088;
-
-    const loan = Number(document.getElementById("loan").value || 0);
-
-    const sell = price * kabu;
-    document.querySelector("#sellAmount .value").textContent =
-        sell.toLocaleString() + " 円";
-
-    const profit = sell - cost - fee;
-    document.querySelector("#profit .value").textContent =
-        profit.toLocaleString() + " 円";
-
-    const tax = Math.floor(profit * 0.2);
-    document.querySelector("#tax .value").textContent =
-        tax.toLocaleString() + " 円";
-
-    const tedori = sell - fee - tax - loan;
-    document.querySelector("#tedori .value").textContent =
-        tedori.toLocaleString() + " 円";
 }
 
 async function fetchPrice() {
@@ -213,31 +187,33 @@ async function fetchPrice() {
             "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
         );
         const data = await res.json();
-        const meta = data.chart.result[0].meta;
+        const result = data.chart.result[0];
+        const meta = result.meta;
+
+        // ★ 本当の前日終値（375）を取る
+        const prevClose = result.meta.chartPreviousClose;
 
         const marketPrice = meta.regularMarketPrice;
-        const prevClose   = meta.previousClose;
 
         const isHolidayLike = FORCE_HOLIDAY_TEST || isMarketHoliday(now);
 
         let price, diff, timeStr;
 
         if (isHolidayLike) {
-            price   = prevClose;
-            diff    = 0;
+            price = prevClose;
+            diff = 0;
             timeStr = "15:30:00";
         } else {
-            price   = marketPrice;
-            diff    = Math.round(marketPrice - prevClose);
+            price = marketPrice;
+            diff = Math.round(marketPrice - prevClose);
 
             const hh = String(now.getHours()).padStart(2, "0");
             const mm = String(now.getMinutes()).padStart(2, "0");
             const ss = String(now.getSeconds()).padStart(2, "0");
-            timeStr  = `${hh}:${mm}:${ss}`;
+            timeStr = `${hh}:${mm}:${ss}`;
         }
 
         updatePrice(price, diff, timeStr);
-        recalc(price);
 
     } catch (e) {
         document.querySelector("#price .value").textContent = "取得失敗";
@@ -248,32 +224,17 @@ function updatePrice(price, diff, timeStr) {
     const priceEl = document.querySelector("#price .value");
 
     let diffText;
-    if (diff === 0) {
-        diffText = "－円";
-    } else if (diff > 0) {
-        diffText = `＋${diff}円`;
-    } else {
-        diffText = `▲${Math.abs(diff)}円`;
-    }
+    if (diff === 0) diffText = "－円";
+    else if (diff > 0) diffText = `＋${diff}円`;
+    else diffText = `▲${Math.abs(diff)}円`;
 
-    // ★ HTML は 1 行しかない → ここに全部まとめるのが正解
-    priceEl.textContent = `${price} 円（前日比${diffText}） (更新 ${timeStr})`;
+    // ★ ここに全部まとめる（HTML は1行構造）
+    // ★ CSS の折り返しで2行に見える
+    priceEl.textContent = `${price} 円（前日比${diffText}）\n(更新 ${timeStr})`;
 }
 
-// ★ 初回実行
 fetchPrice();
-
-// ★ 30秒ごと更新
 setInterval(fetchPrice, 30000);
-
-// ★ 借入残高入力時も再計算
-document.getElementById("loan").addEventListener("input", () => {
-    const priceText = document.querySelector("#price .value").textContent;
-    const m = priceText.match(/^(\d+)\s*円/);
-    if (!m) return;
-    const price = Number(m[1]);
-    if (!isNaN(price)) recalc(price);
-});
 </script>
 
 </body>
