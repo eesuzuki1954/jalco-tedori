@@ -213,18 +213,19 @@ function getDisplayTime() {
     const isWeekend = (day === 0 || day === 6);
 
     // 土日 → 15:30固定
-    if (isWeekend) return "15:30:00";
+    if (isWeekend) return "15:30";
 
     const h = now.getHours();
     const m = now.getMinutes();
 
     // 平日でも 15:30〜翌9:00 → 15:30固定
     if (h > 15 || (h === 15 && m >= 30) || h < 9) {
-        return "15:30:00";
+        return "15:30";
     }
 
     // 取引時間内（9:00〜15:29）だけ現在時刻
-    return now.toLocaleTimeString();
+    return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
 }
 
 // 計算式
