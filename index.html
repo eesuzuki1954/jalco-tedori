@@ -291,24 +291,21 @@ async function fetchPrice() {
         const data = await res.json();
 
         if (FORCE_HOLIDAY_TEST) {
-            // ★ 土日祝テストモード：
             updatePrice(data.prevClose, 0, "15:30:00");
         } else {
-            // ★ 本番モード：
             updatePrice(data.price, Math.round(data.diff), getDisplayTime());
         }
 
     } catch (e) {
         // ② Flask 失敗時
 
-        // ★ 土日祝テストモードでは Yahoo fallback を完全封印
         if (FORCE_HOLIDAY_TEST) {
             document.querySelector("#price .value").textContent =
                 "取得失敗（テスト）";
             return;
         }
 
-        // ★ 本番モードのみ Yahoo fallback を使用
+        // ★ Yahoo fallback
         try {
             const res = await fetch(
                 "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
@@ -317,19 +314,14 @@ async function fetchPrice() {
             const data = await res.json();
             const result = data.chart.result[0];
 
-            const closes = result.indicators.quote[0].close;
+            // ★ Yahoo が壊れている時間帯（9:00〜9:15）は close が null
+            const closes = result.indicators.quote[0].close.filter(c => c);
+            if (closes.length < 2) throw new Error("Yahoo no close");
+
             const timestamps = result.timestamp;
 
             const lastDate = new Date(timestamps[timestamps.length - 1] * 1000).getDate();
-            let prevClose = closes[closes.length - 1];
-
-            for (let i = closes.length - 1; i >= 0; i--) {
-                const d = new Date(timestamps[i] * 1000).getDate();
-                if (d !== lastDate) {
-                    prevClose = closes[i];
-                    break;
-                }
-            }
+            let prevClose = closes[closes.length - 2];
 
             const price = result.meta.regularMarketPrice;
             const diff = Math.round(price - prevClose);
@@ -337,7 +329,8 @@ async function fetchPrice() {
             updatePrice(price, diff, getDisplayTime());
 
         } catch (e2) {
-            document.querySelector("#price .value").textContent = "取得失敗";
+            // ★ fallback の fallback（---円で絶対に取得失敗を出さない）
+            updatePrice("---", "---", getDisplayTime());
         }
     }
 }
