@@ -170,9 +170,29 @@ input {
 </div>
 
 <script>
-// ★ テストモード（本物の土日祝と同じ挙動にする：true、本番：false）
-const FORCE_HOLIDAY_TEST = false;   // ← 本番にするなら必ず false
-//const FORCE_HOLIDAY_TEST = true;   // ← 土日祝テスト 
+// Excel から生成した東証休場日（YYYYMMDD）
+const marketHolidays = ["20260101","20260102","20260103","20260112","20260211","20260223","20260320","20260429","20260503","20260504","20260505","20260506","20260720","20260811","20260921","20260922","20260923","20261012","20261103","20261123","20261231"];
+
+// 経営指標アプリと完全一致の市場時間ロジック
+function getMarketDisplayTime() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = ("0" + (now.getMonth()+1)).slice(-2);
+    const d = ("0" + now.getDate()).slice(-2);
+    const ymd = `${y}${m}${d}`;
+
+    const day = now.getDay(); // 0=日,6=土
+    const hour = now.getHours();
+    const min = now.getMinutes();
+
+    if (day === 0 || day === 6) return "15:30";
+    if (marketHolidays.includes(ymd)) return "15:30";
+    if (hour === 9 && min < 15) return "15:30";
+    if (hour < 9) return "15:30";
+    if (hour > 15 || (hour === 15 && min >= 30)) return "15:30";
+
+    return now.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+}
 
 // 固定値
 const SHARES = 218692;
@@ -180,7 +200,7 @@ const COST = 51200088;
 const FEE = 250000;
 const TAX_RATE = 0.20315;
 
-// ▼ 日付に応じた借入残高の初期値
+// 借入残高の初期値
 function getInitialLoan() {
     const today = new Date();
     const y = today.getFullYear();
@@ -194,7 +214,6 @@ function getInitialLoan() {
     return 40000000;
 }
 
-// 初期値セット
 const loanInput = document.getElementById("loan");
 loanInput.value = getInitialLoan().toLocaleString();
 
@@ -205,28 +224,6 @@ loanInput.addEventListener("input", () => {
     loanInput.value = Number(raw).toLocaleString();
     if (window.latestPrice) calculate(window.latestPrice);
 });
-
-// ★★★ 時間帯ロジック（あなたの元コードの復活版） ★★★
-function getDisplayTime() {
-    const now = new Date();
-    const day = now.getDay(); // 0=日,6=土
-    const isWeekend = (day === 0 || day === 6);
-
-    // 土日 → 15:30固定
-    if (isWeekend) return "15:30";
-
-    const h = now.getHours();
-    const m = now.getMinutes();
-
-    // 平日でも 15:30〜翌9:00 → 15:30固定
-    if (h > 15 || (h === 15 && m >= 30) || h < 9) {
-        return "15:30";
-    }
-
-    // 取引時間内（9:00〜15:29）だけ現在時刻
-    return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-}
 
 // 計算式
 function calculate(price) {
@@ -249,7 +246,7 @@ function calculate(price) {
         tedori.toLocaleString() + " 円";
 }
 
-// 表示ロジック
+// 統一版 updatePrice（2行仕様）
 function updatePrice(price, diff, timeStr) {
     let diffText = "";
     let color = "black";
@@ -261,17 +258,15 @@ function updatePrice(price, diff, timeStr) {
         diffText = `▲${Math.abs(diff).toLocaleString()}円`;
         color = "red";
     } else {
-        diffText = "－円";
+        diffText = `±0円`;  // ← 統一ポイント
     }
 
     const priceEl = document.querySelector("#price .value");
 
-    // 1行目
     let html =
         `${price.toLocaleString()} 円 ` +
         `<span class="diff" style="color:${color}">（前日比${diffText}）</span>`;
 
-    // 2行目
     html += `<br><span class="diff" style="color:gray; display:block; text-align:right;">(更新 ${timeStr})</span>`;
 
     priceEl.innerHTML = html;
@@ -283,29 +278,15 @@ function updatePrice(price, diff, timeStr) {
 // 株価取得
 async function fetchPrice() {
     try {
-        // ① Flask API（本命）
+        // Flask API（本命）
         const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
-
         if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
-
-        if (FORCE_HOLIDAY_TEST) {
-            updatePrice(data.prevClose, 0, "15:30:00");
-        } else {
-            updatePrice(data.price, Math.round(data.diff), getDisplayTime());
-        }
+        updatePrice(data.price, Math.round(data.diff), getMarketDisplayTime());
 
     } catch (e) {
-        // ② Flask 失敗時
-
-        if (FORCE_HOLIDAY_TEST) {
-            document.querySelector("#price .value").textContent =
-                "取得失敗（テスト）";
-            return;
-        }
-
-        // ★ Yahoo fallback
+        // Yahoo fallback
         try {
             const res = await fetch(
                 "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
@@ -314,23 +295,14 @@ async function fetchPrice() {
             const data = await res.json();
             const result = data.chart.result[0];
 
-            // ★ Yahoo が壊れている時間帯（9:00〜9:15）は close が null
-            const closes = result.indicators.quote[0].close.filter(c => c);
-            if (closes.length < 2) throw new Error("Yahoo no close");
-
-            const timestamps = result.timestamp;
-
-            const lastDate = new Date(timestamps[timestamps.length - 1] * 1000).getDate();
-            let prevClose = closes[closes.length - 2];
-
             const price = result.meta.regularMarketPrice;
+            const prevClose = result.meta.previousClose;
             const diff = Math.round(price - prevClose);
 
-            updatePrice(price, diff, getDisplayTime());
+            updatePrice(price, diff, getMarketDisplayTime());
 
         } catch (e2) {
-            // ★ fallback の fallback（---円で絶対に取得失敗を出さない）
-            updatePrice("---", "---", getDisplayTime());
+            updatePrice("---", 0, getMarketDisplayTime());
         }
     }
 }
@@ -341,6 +313,6 @@ fetchPrice();
 // 30秒ごと更新
 setInterval(fetchPrice, 30000);
 </script>
-    
+
 </body>
 </html>
