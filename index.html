@@ -11,8 +11,6 @@ body {
     padding: 20px;
     background: #f2f2f7;
 }
-
-/* カード全体をiOS風に */
 .box {
     background: white;
     padding: 24px;
@@ -20,36 +18,26 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border: 1px solid #e5e5ea;
 }
-
-/* 行を左右2カラムにする */
 .row {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-
-/* 左側（ラベル） */
 .label {
     font-size: 25px;
     display: flex;
     align-items: center;
 }
-
-/* 右側（金額） */
 .value {
     font-size: 25px;
     font-weight: 600;
     white-space: nowrap;
 }
-
-/* 区切り線 */
 .item {
     margin-top: 14px;
     padding-bottom: 6px;
     border-bottom: 1px solid #e5e5ea;
 }
-
-/* D 借入残高（円） */
 .loan-label {
     font-size: 26px;
     font-weight: 600;
@@ -57,8 +45,6 @@ body {
     margin-top: 22px;
     display: block;
 }
-
-/* 入力欄 */
 input {
     width: 100%;
     padding: 12px;
@@ -68,8 +54,6 @@ input {
     border: 1px solid #ccc;
     background: #fafafa;
 }
-
-/* 手取り（黄色カード） */
 .result {
     font-size: 27px;
     font-weight: 700;
@@ -81,15 +65,11 @@ input {
     border-radius: 10px;
     border: 1px solid #f0e6a8;
 }
-
-/* 計算式 */
 .formula {
     font-size: 18px;
     margin-top: 0px;
     color: #666;
 }
-
-/* A/B/C/D バッジ */
 .badge {
     display: inline-block;
     background: #007aff;
@@ -100,7 +80,6 @@ input {
     margin-right: 6px;
     font-size: 18px;
 }
-
 .diff {
     font-size: 16px;
     font-weight: normal;
@@ -112,53 +91,44 @@ input {
 <div class="box">
     <h2>JHD株式 手取り計算</h2>
 
-    <!-- 株価 -->
     <p class="item row" id="price">
         <span class="label">株価：</span>
         <span class="value">取得中…</span>
     </p>
 
-    <!-- 株数 -->
     <p class="item row">
         <span class="label">株数：</span>
         <span class="value">218,692 株</span>
     </p>
 
-    <!-- A 売却代金 -->
     <p class="item row" id="sellAmount">
         <span class="label"><span class="badge">A</span> 売却代金：</span>
         <span class="value">- 円</span>
     </p>
 
-    <!-- 取得原価 -->
     <p class="item row">
         <span class="label">取得原価：</span>
         <span class="value">51,200,088 円</span>
     </p>
 
-    <!-- B 約定手数料 -->
     <p class="item row">
         <span class="label"><span class="badge">B</span> 約定手数料：</span>
         <span class="value">250,000 円</span>
     </p>
 
-    <!-- 売却益 -->
     <p class="item row" id="profit">
         <span class="label">売却益（課税対象）：</span>
         <span class="value">- 円</span>
     </p>
 
-    <!-- C 税金 -->
     <p class="item row" id="tax">
         <span class="label"><span class="badge">C</span> 税金（約20%）：</span>
         <span class="value">- 円</span>
     </p>
 
-    <!-- D 借入残高 -->
     <label class="loan-label"><span class="badge">D</span> 借入残高（円）</label>
     <input id="loan" type="text" inputmode="numeric" pattern="[0-9]*">
 
-    <!-- 手取り -->
     <p class="result row" id="tedori">
         <span class="label">手取り：</span>
         <span class="value">計算中…</span>
@@ -170,18 +140,25 @@ input {
 </div>
 
 <script>
-// Excel から生成した東証休場日（YYYYMMDD）
+// ★ 簡易テストモード：true にすると常に「市場外（15:30）」として動く
+const TEST_FORCE_MARKET_CLOSED = false;
+// const TEST_FORCE_MARKET_CLOSED = true;  // ← テストしたい時だけ ON
+
+// 東証休場日
 const marketHolidays = ["20260101","20260102","20260103","20260112","20260211","20260223","20260320","20260429","20260503","20260504","20260505","20260506","20260720","20260811","20260921","20260922","20260923","20261012","20261103","20261123","20261231"];
 
-// 経営指標アプリと完全一致の市場時間ロジック
+// 経営指標アプリと完全一致
 function getMarketDisplayTime() {
+
+    if (TEST_FORCE_MARKET_CLOSED) return "15:30";
+
     const now = new Date();
     const y = now.getFullYear();
     const m = ("0" + (now.getMonth()+1)).slice(-2);
     const d = ("0" + now.getDate()).slice(-2);
     const ymd = `${y}${m}${d}`;
 
-    const day = now.getDay(); // 0=日,6=土
+    const day = now.getDay();
     const hour = now.getHours();
     const min = now.getMinutes();
 
@@ -200,7 +177,7 @@ const COST = 51200088;
 const FEE = 250000;
 const TAX_RATE = 0.20315;
 
-// 借入残高の初期値
+// 借入残高
 function getInitialLoan() {
     const today = new Date();
     const y = today.getFullYear();
@@ -217,7 +194,6 @@ function getInitialLoan() {
 const loanInput = document.getElementById("loan");
 loanInput.value = getInitialLoan().toLocaleString();
 
-// 3桁区切り入力
 loanInput.addEventListener("input", () => {
     let raw = loanInput.value.replace(/,/g, "");
     raw = raw.replace(/\D/g, "");
@@ -225,7 +201,7 @@ loanInput.addEventListener("input", () => {
     if (window.latestPrice) calculate(window.latestPrice);
 });
 
-// 計算式
+// 計算
 function calculate(price) {
     const loan = Number(loanInput.value.replace(/,/g, ""));
     const sellAmount = price * SHARES;
@@ -246,7 +222,7 @@ function calculate(price) {
         tedori.toLocaleString() + " 円";
 }
 
-// 統一版 updatePrice（2行仕様）
+// 2行仕様の updatePrice
 function updatePrice(price, diff, timeStr) {
     let diffText = "";
     let color = "black";
@@ -258,7 +234,7 @@ function updatePrice(price, diff, timeStr) {
         diffText = `▲${Math.abs(diff).toLocaleString()}円`;
         color = "red";
     } else {
-        diffText = `±0円`;  // ← 統一ポイント
+        diffText = `±0円`;
     }
 
     const priceEl = document.querySelector("#price .value");
@@ -278,7 +254,6 @@ function updatePrice(price, diff, timeStr) {
 // 株価取得
 async function fetchPrice() {
     try {
-        // Flask API（本命）
         const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
         if (!res.ok) throw new Error("Flask NG");
 
@@ -286,7 +261,6 @@ async function fetchPrice() {
         updatePrice(data.price, Math.round(data.diff), getMarketDisplayTime());
 
     } catch (e) {
-        // Yahoo fallback
         try {
             const res = await fetch(
                 "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
@@ -307,10 +281,7 @@ async function fetchPrice() {
     }
 }
 
-// 初回実行
 fetchPrice();
-
-// 30秒ごと更新
 setInterval(fetchPrice, 30000);
 </script>
 
