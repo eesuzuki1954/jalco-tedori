@@ -265,7 +265,14 @@ async function fetchPrice() {
         if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
-        updatePrice(data.price, Math.round(data.diff), getMarketDisplayTime(), data.prevClose);
+        const prevClose = data.price - data.diff;   // ← 前日終値を必ず算出
+
+        updatePrice(
+            data.price,
+            Math.round(data.diff),
+            getMarketDisplayTime(),
+            prevClose
+        );
 
     } catch (e) {
         try {
