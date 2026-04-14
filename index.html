@@ -261,7 +261,9 @@ function updatePrice(price, diff, timeStr, prevClose) {
 // 株価取得
 async function fetchPrice() {
     try {
-        const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
+        // const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
+        const res = await fetch("https://backend-gold-two-ksjk19agym.vercel.app/api/stock");
+
         if (!res.ok) throw new Error("Flask NG");
 
         const data = await res.json();
