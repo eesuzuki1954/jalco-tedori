@@ -305,7 +305,7 @@ async function fetchPrice() {
         }
     } catch (e) {
         updatePrice("---", 0, getMarketDisplayTime(), 0);
-    }
+    }}
 }
 
 // 共通の更新処理
@@ -314,21 +314,21 @@ function updateUI(price, diff, source) {
     const d = parseFloat(String(diff).replace('+', ''));
     const prevClose = p - d;
     
-    // ソース名をラベルに反映
-    let sourceLabel = "";
-    if (source === "株探") sourceLabel = "株探";
-    if (source === "Yahoo API") sourceLabel = "予備";
-    if (source === "ローカル保持値") sourceLabel = "保存値";
+    // ソース名によってラベルを切り替える
+    let label = "更新";
+    if (source === "株探") label = "株探";
+    if (source === "Yahoo API") label = "予備";
+    if (source === "ローカル保持値") label = "保存値";
 
-    // 画面の「更新」部分を書き換え（要素のIDが 'update-time' の場合）
-    const timeElement = document.getElementById('update-time'); 
-    if (timeElement) {
-        timeElement.textContent = `(${sourceLabel} ${getMarketDisplayTime()})`;
-    }
-    console.log(`Source: ${source}`); // デバッグ用
-    updatePrice(p, d, getMarketDisplayTime(), prevClose);
+    // 現在の時刻を取得（既存の関数があればそれを使用）
+    const timeStr = getMarketDisplayTime(); 
+
+    // updatePriceを呼び出す際、時刻の前にラベルを結合して渡す
+    // これにより、画面上の(更新 15:30)が(株探 15:30)に変わります
+    updatePrice(p, d, `${label} ${timeStr}`, prevClose);
+    
+    console.log(`取得成功：${source}`);
 }
-
 
 
 fetchPrice();
