@@ -260,41 +260,59 @@ function updatePrice(price, diff, timeStr, prevClose) {
 
 // 株価取得
 async function fetchPrice() {
+    // 1. 株探 (CORSプロキシ経由でスクレイピングを試行)
     try {
-        // const res = await fetch("https://eesuzuki1978.pythonanywhere.com/stock");
-        const res = await fetch("https://backend-gold-two-ksjk19agym.vercel.app/api/stock");
-
-        if (!res.ok) throw new Error("Flask NG");
-
-        const data = await res.json();
-        const prevClose = data.price - data.diff;   // ← 前日終値を必ず算出
-
-        updatePrice(
-            data.price,
-            Math.round(data.diff),
-            getMarketDisplayTime(),
-            prevClose
-        );
-
-    } catch (e) {
-        try {
-            const res = await fetch(
-                "https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T"
-            );
-
-            const data = await res.json();
-            const result = data.chart.result[0];
-
-            const price = result.meta.regularMarketPrice;
-            const prevClose = result.meta.previousClose;
-            const diff = Math.round(price - prevClose);
-
-            updatePrice(price, diff, getMarketDisplayTime(), prevClose);
-
-        } catch (e2) {
-            updatePrice("---", 0, getMarketDisplayTime(), 0);
+        const res = await fetch("https://corsproxy.io/?https://kabutan.jp/stock/?code=6625");
+        const text = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "text/html");
+        
+        const price = doc.querySelector("span.kabuka")?.textContent.replace("円", "").strip();
+        const dd = doc.querySelectorAll("dl.si_i1_dl1 dd");
+        const diff = dd[0]?.textContent.trim();
+        
+        if (price) {
+            updateUI(price, diff, "株探");
+            return; // 成功したので終了
         }
+    } catch (e) { console.log("株探取得失敗"); }
+
+    // 2. Yahoo Finance API (CORSプロキシ経由)
+    try {
+        const res = await fetch("https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+        const data = await res.json();
+        const result = data.chart.result[0];
+        const price = result.meta.regularMarketPrice;
+        const diff = Math.round(price - result.meta.previousClose);
+        
+        if (price) {
+            updateUI(price, diff, "Yahoo");
+            return; // 成功したので終了
+        }
+    } catch (e) { console.log("Yahoo取得失敗"); }
+
+    // 3. どちらも失敗した場合はローカルの jhd.json (C:\keiei\public\jhd.json)
+    // ※これはPC上のブラウザで index.html を開いている場合に有効です
+    try {
+        // fileプロトコルまたはローカルサーバー経由を想定
+        const res = await fetch("C:/keiei/public/jhd.json");
+        const data = await res.json();
+        if (data.price) {
+            updateUI(data.price, data.diff, "ローカル保持値");
+        }
+    } catch (e) {
+        console.log("最終バックアップも取得失敗");
+        updatePrice("---", 0, getMarketDisplayTime(), 0);
     }
+}
+
+// 共通の更新処理
+function updateUI(price, diff, source) {
+    const p = parseFloat(String(price).replace(/,/g, ''));
+    const d = parseFloat(String(diff).replace('+', ''));
+    const prevClose = p - d;
+    console.log(`Source: ${source}`); // デバッグ用
+    updatePrice(p, d, getMarketDisplayTime(), prevClose);
 }
 
 fetchPrice();
