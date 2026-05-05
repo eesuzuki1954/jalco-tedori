@@ -282,7 +282,7 @@ async function fetchPrice() {
 
     // 【第2弾】Yahoo API (JSONなので解析が楽で、株探よりエラーになりにくい)
     try {
-        const res = await fetch("https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
+        const res = await fetch("https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/8508.T");
         const data = await res.json();
         const result = data.chart.result[0];
         const price = result.meta.regularMarketPrice;
