@@ -260,48 +260,50 @@ function updatePrice(price, diff, timeStr, prevClose) {
 
 // 株価取得
 async function fetchPrice() {
-    // 1. 株探 (CORSプロキシ経由でスクレイピングを試行)
+    // 【第1弾】株探
+    // 直接 fetch するとエラーになるため、プロキシを通します
     try {
         const res = await fetch("https://corsproxy.io/?https://kabutan.jp/stock/?code=6625");
         const text = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, "text/html");
         
-        const price = doc.querySelector("span.kabuka")?.textContent.replace("円", "").strip();
-        const dd = doc.querySelectorAll("dl.si_i1_dl1 dd");
-        const diff = dd[0]?.textContent.trim();
-        
-        if (price) {
+        // Python版 soup.select_one("span.kabuka") と同じ指定です
+        const priceTag = doc.querySelector("span.kabuka");
+        const ddList = doc.querySelectorAll("dl.si_i1_dl1 dd");
+
+        if (priceTag) {
+            const price = priceTag.textContent.replace("円", "").trim();
+            const diff = ddList[0]?.textContent.trim();
             updateUI(price, diff, "株探");
-            return; // 成功したので終了
+            return;
         }
     } catch (e) { console.log("株探取得失敗"); }
 
-    // 2. Yahoo Finance API (CORSプロキシ経由)
+    // 【第2弾】Yahoo API (JSONなので解析が楽で、株探よりエラーになりにくい)
     try {
         const res = await fetch("https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/6625.T");
         const data = await res.json();
         const result = data.chart.result[0];
         const price = result.meta.regularMarketPrice;
-        const diff = Math.round(price - result.meta.previousClose);
+        const prevClose = result.meta.previousClose;
+        const diff = Math.round(price - prevClose);
         
         if (price) {
             updateUI(price, diff, "Yahoo");
-            return; // 成功したので終了
+            return;
         }
     } catch (e) { console.log("Yahoo取得失敗"); }
 
-    // 3. どちらも失敗した場合はローカルの jhd.json (C:\keiei\public\jhd.json)
-    // ※これはPC上のブラウザで index.html を開いている場合に有効です
+    // 【第3弾】ローカルの jhd.json (PCのバックアップ)
+    // リポジトリが独立しているため、keiei側の公開URLを指定します
     try {
-        // fileプロトコルまたはローカルサーバー経由を想定
-        const res = await fetch("C:/keiei/public/jhd.json");
+        const res = await fetch("https://あなたのkeiei公開ドメイン/jhd.json?t=" + new Date().getTime());
         const data = await res.json();
         if (data.price) {
             updateUI(data.price, data.diff, "ローカル保持値");
         }
     } catch (e) {
-        console.log("最終バックアップも取得失敗");
         updatePrice("---", 0, getMarketDisplayTime(), 0);
     }
 }
