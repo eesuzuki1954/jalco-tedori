@@ -296,9 +296,9 @@ async function fetchPrice() {
     } catch (e) { console.log("Yahoo取得失敗"); }
 
     // 【第3弾】ローカルの jhd.json (PCのバックアップ)
-    // リポジトリが独立しているため、keiei側の公開URLを指定します
+    // リポジトリが独立しているため、keiei側の公開URLを指定しますhttps://keiei.vercel.app/jhd.json
     try {
-        const res = await fetch("https://あなたのkeiei公開ドメイン/jhd.json?t=" + new Date().getTime());
+        const res = await fetch("https://keiei.vercel.app/jhd.json?t=" + new Date().getTime());
         const data = await res.json();
         if (data.price) {
             updateUI(data.price, data.diff, "ローカル保持値");
