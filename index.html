@@ -263,28 +263,34 @@ async function fetchPrice() {
     // 【第1弾】株探
     // 直接 fetch するとエラーになるため、プロキシを通します
     try {
-        const res = await fetch("https://corsproxy.io/?https://kabutan.jp/stock/?code=6625");
+        // URLの末尾に時刻を付けてキャッシュを無効化します
+        const cacheBuster = new Date().getTime();
+        const kabutanUrl = `https://kabutan.jp/stock/?code=6625&t=${cacheBuster}`;
+        const res = await fetch(`https://corsproxy.io/?${kabutanUrl}`);
+        
         const text = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, "text/html");
         
-        // 1. 現在値の取得：span.kabukaを優先し、数字とドット以外をすべて除去
+        // 1. 現在値の取得（Jupyterで成功したロジックを反映）
         const priceTag = doc.querySelector("span.kabuka");
         let priceStr = "";
         if (priceTag) {
+            // 数字とドット以外をすべて除去
             priceStr = priceTag.textContent.replace(/[^0-9.]/g, ""); 
         }
 
-        // 2. 前日比の取得：dd内の数値を抽出
+        // 2. 前日比の取得
         const diffElement = doc.querySelector("dl.si_i1_dl1 dd");
         let diffStr = "0";
         if (diffElement) {
-            // カッコ内の比率や記号を無視して、最初の数値（符号付き）を抽出
+            // 符号付きで最初の数値を抽出
             const match = diffElement.textContent.match(/[+-]?\d+/);
             if (match) diffStr = match[0];
         }
 
         if (priceStr && priceStr !== "") {
+            // 確実に取得できた時だけ画面を更新
             updateUI(priceStr, diffStr, "株探");
             return;
         }
