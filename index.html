@@ -268,17 +268,34 @@ async function fetchPrice() {
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, "text/html");
         
-        // Python版 soup.select_one("span.kabuka") と同じ指定です
-        const priceTag = doc.querySelector("span.kabuka");
-        const ddList = doc.querySelectorAll("dl.si_i1_dl1 dd");
+        // 1. 現在値の取得：thが「現在値」である行の隣のtdを探す
+        let price = "";
+        const ths = doc.querySelectorAll("th");
+        for (let th of ths) {
+            if (th.textContent.includes("現在値")) {
+                price = th.nextElementSibling.textContent.replace("円", "").replace(/,/g, "").trim();
+                break;
+            }
+        }
 
-        if (priceTag) {
-            const price = priceTag.textContent.replace("円", "").trim();
-            const diff = ddList[0]?.textContent.trim();
+        // 2. 前日比の取得：dl.si_i1_dl1 dd の1番目を取得
+        // ※ここが以前の「+4」のままなのは、要素の特定が甘い可能性があるため、より厳密に指定
+        const diffElement = doc.querySelector("dl.si_i1_dl1 dd span");
+        let diff = "";
+        if (diffElement) {
+            diff = diffElement.parentElement.textContent.trim().split(" ")[0]; 
+        } else {
+            // spanがない場合の予備
+            const ddList = doc.querySelectorAll("dl.si_i1_dl1 dd");
+            if (ddList.length > 0) diff = ddList[0].textContent.trim();
+        }
+
+        if (price && price !== "") {
             updateUI(price, diff, "株探");
             return;
         }
-    } catch (e) { console.log("株探取得失敗"); }
+    } catch (e) { console.log("株探取得失敗", e); }
+
 
     // 【第2弾】Yahoo API (JSONなので解析が楽で、株探よりエラーになりにくい)
     try {
